@@ -107,7 +107,7 @@ class get_groups_for_search_widget extends external_api {
                     'group' => $group->id
                 ]);
                 return (object) [
-                    'id' => $group->id,
+                    'id' => (int)$group->id,
                     'name' => format_string($group->name, true, ['context' => $context]),
                     'url' => $url->out(false),
                     'active' => false
@@ -141,7 +141,7 @@ class get_groups_for_search_widget extends external_api {
      */
     public static function group_description(): external_description {
         $groupfields = [
-            'id' => new external_value(PARAM_ALPHANUM, 'An ID for the group', VALUE_REQUIRED),
+            'id' => new external_value(PARAM_INT, 'An ID for the group', VALUE_REQUIRED),
             'url' => new external_value(PARAM_URL, 'The link that applies the group action', VALUE_REQUIRED),
             'name' => new external_value(PARAM_TEXT, 'The full name of the group', VALUE_REQUIRED),
             'active' => new external_value(PARAM_BOOL, 'Are we currently on this item?', VALUE_REQUIRED)

@@ -48,6 +48,7 @@ $string['overviewfilename'] = 'grades';
 $string['overviewreport'] = 'Grades report';
 $string['overviewreportgraph'] = 'Overall number of students achieving grade ranges';
 $string['overviewreportgraphgroup'] = 'Number of students in group \'{$a}\' achieving grade ranges';
+$string['overviewreportgraphparticipantsnotingroup'] = 'Number of students who are participants not in a group achieving grade ranges';
 $string['pagesize'] = 'Page size';
 $string['pluginname'] = 'Grades';
 $string['preferencespage'] = 'Preferences just for this page';

@@ -47,7 +47,13 @@ if ($confirm) {
     if (!$workshop->switch_phase($phase)) {
         throw new \moodle_exception('errorswitchingphase', 'workshop', $workshop->view_url());
     }
-    redirect($workshop->view_url());
+    // Redirect to workshop view.
+    $redirect = $workshop->view_url();
+    // In case we use groups, reset any previously selected group back to all participants.
+    if (groups_get_course_groupmode($course)) {
+        $redirect .= '&group=0';
+    }
+    redirect($redirect);
 }
 
 $PAGE->set_title($workshop->name);

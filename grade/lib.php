@@ -154,10 +154,15 @@ class graded_users_iterator {
         $params = array_merge($params, $enrolledparams, $relatedctxparams);
 
         if ($this->groupid) {
-            $groupsql = "INNER JOIN {groups_members} gm ON gm.userid = u.id";
-            $groupwheresql = "AND gm.groupid = :groupid";
-            // $params contents: gradebookroles
-            $params['groupid'] = $this->groupid;
+            if ($this->groupid == USERSWITHOUTGROUP) {
+                $groupsql = "LEFT JOIN {groups_members} gm ON gm.userid = u.id";
+                $groupwheresql = "AND gm.groupid IS NULL";
+            } else {
+                $groupsql = "INNER JOIN {groups_members} gm ON gm.userid = u.id";
+                $groupwheresql = "AND gm.groupid = :groupid";
+                // Array $params contents: gradebookroles.
+                $params['groupid'] = $this->groupid;
+            }
         } else {
             $groupsql = "";
             $groupwheresql = "";
@@ -1096,6 +1101,8 @@ class grade_plugin_return {
                     $course = get_course($this->courseid);
                 }
                 $this->groupid = groups_get_course_group($course, true);
+            } else if ($changegroup === USERSWITHOUTGROUP) {
+                $this->groupid = USERSWITHOUTGROUP;
             }
         }
     }

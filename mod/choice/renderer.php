@@ -103,6 +103,17 @@ class mod_choice_renderer extends plugin_renderer_base {
                 $html .= html_writer::tag('label', get_string('havetologin', 'choice'));
             }
         }
+        if (isset($options['currentgroup'])) {
+            $html .= html_writer::tag(
+                'input',
+                '',
+                [
+                    'name' => 'group',
+                    'type' => 'hidden',
+                    'value' => (int)$options['currentgroup'],
+                ]
+            );
+        }
 
         $html .= html_writer::end_tag('ul');
         $html .= html_writer::end_tag('form');

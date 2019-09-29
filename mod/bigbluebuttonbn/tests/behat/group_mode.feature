@@ -82,7 +82,7 @@ Feature: Test the module in group mode.
       | capability                  | permission | role           | contextlevel | reference |
       | moodle/site:accessallgroups | Prevent    | editingteacher | Course       | C1        |
     When I am on the "RoomRecordings" "bigbluebuttonbn activity" page logged in as "teacher1"
-    Then I should see "Separate groups: Group 1"
+    Then the field "Separate groups" matches value "Group 1"
 
   @javascript
   Scenario: When I create a BBB activity as a teacher, I should only be able to specify individual "User" participants with whom I share a group with (or can view on the course participants screen).

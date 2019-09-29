@@ -1693,7 +1693,7 @@ function forum_get_discussions($cm, $forumsort="", $fullpost=true, $unused=-1, $
                 $groupselect = "AND (d.groupid = ? OR d.groupid = -1)";
                 $params[] = $currentgroup;
             } else {
-                $groupselect = "AND d.groupid = -1";
+                $groupselect = "AND d.groupid = -1 OR d.groupid = " . USERSWITHOUTGROUP;
             }
         }
     } else {

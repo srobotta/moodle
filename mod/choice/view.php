@@ -84,8 +84,12 @@ if (data_submitted() && !empty($action) && confirm_sesskey()) {
 
     if ($answer && is_enrolled($context, null, 'mod/choice:choose')) {
         choice_user_submit_response($answer, $choice, $USER->id, $course, $cm);
-        redirect(new moodle_url('/mod/choice/view.php',
-            array('id' => $cm->id, 'notify' => 'choicesaved', 'sesskey' => sesskey())));
+        $params = ['id' => $cm->id, 'notify' => 'choicesaved', 'sesskey' => sesskey()];
+        $group = optional_param('group', -1, PARAM_INT);
+        if ($group !== -1) {
+            $params['group'] = $group;
+        }
+        redirect(new moodle_url('/mod/choice/view.php', $params));
     } else if (empty($answer) and $action === 'makechoice') {
         // We cannot use the 'makechoice' alone because there might be some legacy renderers without it,
         // outdated renderers will not get the 'mustchoose' message - bad luck.
@@ -193,6 +197,21 @@ if ( (!$current or $choice->allowupdate) and $choiceopen and is_enrolled($contex
     // They haven't made their choice yet or updates allowed and choice is open.
     $options = choice_prepare_options($choice, $USER, $cm, $allresponses);
     $renderer = $PAGE->get_renderer('mod_choice');
+    if ($groupmode > 0) {
+        // When we use groups, check that the user that submits his choice will see the results of his group
+        // even if another group is set in the session or the user has access to all groups.
+        $currentgroup = groups_get_activity_group($cm);
+        $usergroups = groups_of_user((int)$USER->id, (int)$cm->course);
+        if ($currentgroup !== false) {
+            // If the user is not in the current selected group from the session (mainly when the user has no group),
+            // then submit the nogroup with the submission so that the user gets results of all participants in case
+            // results are shown.
+            if (!in_array($currentgroup, $usergroups)) {
+                $currentgroup = 0;
+            }
+            $options['currentgroup'] = $currentgroup;
+        }
+    }
     echo $renderer->display_options($options, $cm->id, $choice->display, $choice->allowmultiple);
     $choiceformshown = true;
 } else {

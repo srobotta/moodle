@@ -33,6 +33,7 @@ $action = optional_param('action', '', PARAM_ALPHA); // What to look at.
 $qid = optional_param('qid', 0, PARAM_RAW);       // Question IDs comma-separated list.
 $student = optional_param('student', 0, PARAM_INT);   // Student ID.
 $notes = optional_param('notes', '', PARAM_RAW);    // Save teachers notes.
+$group = optional_param('group', 0, PARAM_INT); // Group id.
 
 $qids = explode(',', $qid);
 $qids = clean_param_array($qids, PARAM_INT);
@@ -58,6 +59,9 @@ if ($student !== 0) {
 }
 if ($notes !== '') {
     $url->param('notes', $notes);
+}
+if ($group !== 0) {
+    $url->param('group', $group);
 }
 $PAGE->set_url($url);
 

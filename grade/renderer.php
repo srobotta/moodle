@@ -92,11 +92,13 @@ class core_grades_renderer extends plugin_renderer_base {
         $activegroup = groups_get_course_group($course, true, $allowedgroups);
         $buttondata['group'] = $activegroup;
 
-        if ($activegroup) {
-            $group = groups_get_group($activegroup);
-            $buttondata['selectedgroup'] = format_string($group->name, true, ['context' => $context]);
+        if ($activegroup === USERSWITHOUTGROUP) {
+            $buttondata['selectedgroup'] = get_string('participantsnotingroup');
         } else if ($activegroup === 0) {
             $buttondata['selectedgroup'] = get_string('allparticipants');
+        } else {
+            $group = groups_get_group($activegroup);
+            $buttondata['selectedgroup'] = format_string($group->name, true, ['context' => $context]);
         }
 
         $groupdropdown = new comboboxsearch(

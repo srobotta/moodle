@@ -1165,6 +1165,44 @@ function chat_print_error($level, $msg) {
 }
 
 /**
+ * Returns a standard object of chat settings for a group. The settings object contains the follwing properties:
+ * - groupmode <int> can be 0: no groups used, 1: separate groups, 2: visible groups.
+ * - groupid <int> >0: a group, 0: all participants, -1: participants not in a group (when groups are used).
+ * - groupname <string> display name of the group or empty.
+ * - readonly <bool> when true, user can participate read only, when false user may write as well.
+ * @param object $cm the course module object
+ * @return object the settings object as described above.
+ * @throws coding_exception
+ * @throws dml_exception
+ * @throws moodle_exception
+ */
+function chat_get_group_settings(object $cm): object {
+    global $USER;
+
+    $groupid = optional_param('groupid', 0, PARAM_INT); // Only for teachers.
+    // Check to see if groups are being used here.
+    if ($groupmode = groups_get_activity_groupmode($cm)) {   // Groups are being used.
+        if ($groupid === USERSWITHOUTGROUP) {
+            $groupname = ': ' . get_string('participantsnotingroup');
+        } else if ($groupid = groups_get_activity_group($cm)) {
+            if (!$group = groups_get_group($groupid)) {
+                throw new \moodle_exception('invalidgroupid');
+            }
+            $groupname = ': ' . $group->name;
+        } else {
+            $groupname = ': '.get_string('allparticipants');
+        }
+        $readonly = ($groupid > 0 && !in_array($groupid, groups_of_user($USER->id)));
+    }
+    $settings = new \stdClass();
+    $settings->groupmode = $groupmode;
+    $settings->groupid = $groupid;
+    $settings->groupname = $groupname ?? '';
+    $settings->readonly = $readonly ?? false;
+    return $settings;
+}
+
+/**
  * List the actions that correspond to a view of this module.
  * This is used by the participation report.
  *

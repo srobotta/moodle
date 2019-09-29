@@ -98,6 +98,10 @@ class get_groups_for_selector extends external_api {
                     'id' => 0,
                     'name' => get_string('allparticipants'),
                 ]);
+                $groupsmenu[USERSWITHOUTGROUP] = (object) [
+                    'id' => USERSWITHOUTGROUP,
+                    'name' => get_string('participantsnotingroup'),
+                ];
             }
 
             $mappedgroups = array_map(function($group) use ($context, $OUTPUT) {
@@ -141,7 +145,7 @@ class get_groups_for_selector extends external_api {
      */
     public static function group_description(): external_description {
         $groupfields = [
-            'id' => new external_value(PARAM_ALPHANUM, 'An ID for the group', VALUE_REQUIRED),
+            'id' => new external_value(PARAM_INT, 'An ID for the group', VALUE_REQUIRED),
             'name' => new external_value(PARAM_TEXT, 'The full name of the group', VALUE_REQUIRED),
             'groupimageurl' => new external_value(PARAM_URL, 'Group image URL', VALUE_OPTIONAL),
         ];

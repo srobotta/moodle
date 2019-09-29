@@ -180,7 +180,9 @@ if ($id) {
 
     // This is where people will land when they change groups using the drop-down selector.
     // Set the activity group so tabs and content are shown correctly.
-    $currentgroup = groups_get_activity_group($cm, true);
+    if ($currentgroup === 0) {
+        $currentgroup = groups_get_activity_group($cm, true);
+    }
 
     if ($wiki->wikimode == 'individual' && ($groupmode == SEPARATEGROUPS || $groupmode == VISIBLEGROUPS)) {
         list($gid, $uid) = explode('-', $groupanduser);
