@@ -71,16 +71,23 @@ M.mod_chat_ajax.init = function(Y, cfg) {
             userlist.set('aria-relevant', 'all');
 
             // Attach the default events for this module.
-            this.sendbutton.on('click', this.send, this);
             this.messagebox.on('mouseenter', function() {
                 this.scrollable = false;
             }, this);
             this.messagebox.on('mouseleave', function() {
                 this.scrollable = true;
             }, this);
-
-            // Send the message when the enter key is pressed.
-            Y.on('key', this.send, this.messageinput,  'press:13', this);
+            // If the readonly element is there, disable the input field and show a message.
+            var readonlyplaceholder = Y.one('.readonly-group');
+            if (readonlyplaceholder) {
+                this.messageinput.replace('<span>' + readonlyplaceholder._node.innerHTML + '</span><div></div>');
+                this.sendbutton.remove();
+            } else {
+                // Otherwise continue with the normal behaviour
+                this.sendbutton.on('click', this.send, this);
+                // Send the message when the enter key is pressed.
+                Y.on('key', this.send, this.messageinput, 'press:13', this);
+            }
 
             document.title = this.cfg.chatroom_name;
 
@@ -95,9 +102,11 @@ M.mod_chat_ajax.init = function(Y, cfg) {
                 }),
                 on : {
                     success : function(tid, outcome) {
-                        this.messageinput.removeAttribute('disabled');
-                        this.messageinput.set('value', '');
-                        this.messageinput.focus();
+                        if (!readonlyplaceholder) {
+                            this.messageinput.removeAttribute('disabled');
+                            this.messageinput.set('value', '');
+                            this.messageinput.focus();
+                        }
                         try {
                             var data = Y.JSON.parse(outcome.responseText);
                         } catch (ex) {

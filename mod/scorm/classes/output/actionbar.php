@@ -59,7 +59,7 @@ class actionbar implements renderable, templatable {
      * @return array data for the template
      */
     public function export_for_template(renderer_base $output): array {
-        global $PAGE;
+        global $DB, $PAGE;
 
         $basicreportlink = new moodle_url('/mod/scorm/report.php', ['id' => $this->id, 'mode' => 'basic']);
         $graphreportlink = new moodle_url('/mod/scorm/report.php', ['id' => $this->id, 'mode' => 'graphs']);
@@ -93,6 +93,11 @@ class actionbar implements renderable, templatable {
                     'attemptsmode' => $this->attemptsmode, 'objectivescore' => '0',
                     'sesskey' => $sesskey
                 ];
+            }
+            $cm = $DB->get_record('course_modules', ['id' => $this->id]);
+            $groupid = groups_get_activity_group($cm);
+            if ($groupid !== false) {
+                $options['group'] = $groupid;
             }
 
             $options['download'] = 'ODS';

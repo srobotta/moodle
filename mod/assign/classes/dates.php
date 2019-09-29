@@ -56,7 +56,8 @@ class dates extends activity_dates {
         $activitygroup = groups_get_activity_group($this->cm, true);
         if ($activitygroup) {
             if ($assign->can_view_grades()) {
-                $groupoverride = \cache::make('mod_assign', 'overrides')->get("{$this->cm->instance}_g_{$activitygroup}");
+                $cachekey = $this->cm->instance . '_g_' . ($activitygroup == USERSWITHOUTGROUP ? '' : $activitygroup);
+                $groupoverride = \cache::make('mod_assign', 'overrides')->get($cachekey);
                 if (!empty($groupoverride->allowsubmissionsfromdate)) {
                     $timeopen = $groupoverride->allowsubmissionsfromdate;
                 }

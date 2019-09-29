@@ -164,7 +164,7 @@ Feature: Basic use of the Manual grading report
       | 1    | Duck     |
     When I am on the "Quiz 1" "mod_quiz > Manual grading report" page logged in as "marker"
     Then I should see "Quiz 1"
-    And I should see "Separate groups: All participants"
+    And the field "Separate groups" matches value "All participants"
     Then I should see "Sorry, but you need to be part of a group to see this page."
 
   @javascript @editor_atto

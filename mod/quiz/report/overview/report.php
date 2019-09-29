@@ -187,18 +187,20 @@ class quiz_overview_report extends attempts_report {
                     $groupname = format_string(groups_get_group_name($currentgroup), true, [
                         'context' => $this->context,
                     ]);
-                    $graphname = get_string('overviewreportgraphgroup', 'quiz_overview', $groupname);
+                    $graphname = ($currentgroup == USERSWITHOUTGROUP)
+                        ? get_string('overviewreportgraphparticipantsnotingroup', 'quiz_overview')
+                        : get_string('overviewreportgraphgroup', 'quiz_overview', $groupname);
                     // Numerical range data should display in LTR even for RTL languages.
                     echo $output->chart($chart, $graphname, ['dir' => 'ltr']);
                 }
-            }
-
-            if ($DB->record_exists('quiz_grades', ['quiz' => $quiz->id])) {
-                $data = quiz_report_grade_bands($bandwidth, $bands, $quiz->id, new \core\dml\sql_join());
-                $chart = self::get_chart($labels, $data);
-                $graphname = get_string('overviewreportgraph', 'quiz_overview');
-                // Numerical range data should display in LTR even for RTL languages.
-                echo $output->chart($chart, $graphname, ['dir' => 'ltr']);
+            } else {
+                if ($DB->record_exists('quiz_grades', ['quiz' => $quiz->id])) {
+                    $data = quiz_report_grade_bands($bandwidth, $bands, $quiz->id, new \core\dml\sql_join());
+                    $chart = self::get_chart($labels, $data);
+                    $graphname = get_string('overviewreportgraph', 'quiz_overview');
+                    // Numerical range data should display in LTR even for RTL languages.
+                    echo $output->chart($chart, $graphname, ['dir' => 'ltr']);
+                }
             }
         }
 

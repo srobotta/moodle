@@ -287,8 +287,11 @@
    //now give links for downloading spreadsheets.
     if (!empty($users) && has_capability('mod/choice:downloadresponses',$context)) {
         $downloadoptions = array();
-        $options = array();
-        $options["id"] = "$cm->id";
+        $options = ['id' => $cm->id];
+        $groupid = groups_get_activity_group($cm);
+        if ($groupid !== false) {
+            $options['group'] = $groupid;
+        }
         $options["download"] = "ods";
         $button =  $OUTPUT->single_button(new moodle_url("report.php", $options), get_string("downloadods"));
         $downloadoptions[] = html_writer::tag('li', $button, array('class' => 'reportoption list-inline-item'));

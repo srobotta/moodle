@@ -108,7 +108,7 @@ Feature: Feedbacks in courses with groups
     # User without group can see all participants only
     And I am on the "Course feedback" "feedback activity" page logged in as user7
     And I follow "Analysis"
-    And I should see "Separate groups: All participants"
+    And the field "Separate groups" matches value "All participants"
     And I show chart data for the "multichoice1" feedback
     And I should see "3 (37.50 %)" in the "Yes of course" "table_row"
     And I should see "3 (37.50 %)" in the "Not at all" "table_row"
@@ -117,7 +117,7 @@ Feature: Feedbacks in courses with groups
     # User in non-participation group sees the same as no groups
     And I am on the "Course feedback" "feedback activity" page logged in as user8
     And I follow "Analysis"
-    And I should see "Separate groups: All participants"
+    And the field "Separate groups" matches value "All participants"
     And I show chart data for the "multichoice1" feedback
     And I should see "3 (37.50 %)" in the "Yes of course" "table_row"
     And I should see "3 (37.50 %)" in the "Not at all" "table_row"
@@ -222,7 +222,7 @@ Feature: Feedbacks in courses with groups
     # User without group can see all participants only
     And I am on the "Course anon feedback" "feedback activity" page logged in as user7
     And I follow "Analysis"
-    And I should see "Separate groups: All participants"
+    And the field "Separate groups" matches value "All participants"
     And I show chart data for the "multichoice1" feedback
     And I should see "3 (37.50 %)" in the "Yes of course" "table_row"
     And I should see "3 (37.50 %)" in the "Not at all" "table_row"
@@ -231,7 +231,7 @@ Feature: Feedbacks in courses with groups
     # User in non-participation group is the same as no groups.
     And I am on the "Course anon feedback" "feedback activity" page logged in as user8
     And I follow "Analysis"
-    And I should see "Separate groups: All participants"
+    And the field "Separate groups" matches value "All participants"
     And I show chart data for the "multichoice1" feedback
     And I should see "3 (37.50 %)" in the "Yes of course" "table_row"
     And I should see "3 (37.50 %)" in the "Not at all" "table_row"

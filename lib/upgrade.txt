@@ -364,6 +364,12 @@ being forced open in all behat tests.
   groups_get_members_join which could also accept an array of groups, or the constant USERSWITHOUTGROUP.
   This has now been made consistent. These enrol methods now accept all the group-related options that
   groups_get_members_join can handle.
+* In grouplib.php, the signature of the method groups_print_activity_menu() has changed. The former boolean
+  parameter $hideallparticipants has been renamed to $hideoption and is an integer now. With this setting
+  the options "All participants" and "Participants not in a group" can be hidden from the list of groups.
+  Before this was only for the "All participants" option where a boolean was sufficient.
+  Furthermore the method has a new additional optional parameter $preselect to select an option from the
+  list of groups by the caller.
 * assign_capability() now has an optional $performancehints parameter which can be used in
   situations where it is being called in a loop in response to a database query, to reduce the
   amount of checks it has to do.
@@ -551,6 +557,9 @@ being forced open in all behat tests.
 * The plugin_functions cache in core has been made localisable by prefixing the
   key it uses with the all versions hash, which only changes when there are code
   changes.
+* New function groups_get_by_context_and_course() in grouplib.php. This function does the real work for
+  groups_get_course_group() and groups_get_activity_group() that contained very similar content and that work both in
+  the same way.
 
 === 4.0 ===
 

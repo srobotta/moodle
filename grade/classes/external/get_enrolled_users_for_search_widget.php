@@ -103,10 +103,14 @@ class get_enrolled_users_for_search_widget extends external_api {
 
         while ($userdata = $gui->next_user()) {
             $guiuser = $userdata->user;
+            $urlparams = ['id' => $courseid, 'userid' => $guiuser->id];
+            if ($groupid != 0) {
+                $urlparams['group'] = $groupid;
+            }
             $user = new \stdClass();
             $user->fullname = fullname($guiuser);
             $user->id = $guiuser->id;
-            $user->url = (new moodle_url($actionbaseurl, ['id' => $courseid, 'userid' => $guiuser->id]))->out(false);
+            $user->url = (new moodle_url($actionbaseurl, $urlparams))->out(false);
             $userpicture = new \user_picture($guiuser);
             $userpicture->size = 1;
             $user->profileimage = $userpicture->get_url($PAGE)->out(false);

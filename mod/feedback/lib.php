@@ -1030,7 +1030,10 @@ function feedback_count_complete_users($cm, $group = false) {
 
     $fromgroup = '';
     $wheregroup = '';
-    if ($group) {
+    if ($group == USERSWITHOUTGROUP) {
+        $fromgroup = ' LEFT JOIN {groups_members} g ON c.userid = g.userid';
+        $wheregroup = ' AND g.groupid IS NULL';
+    } else {
         $fromgroup = ', {groups_members} g';
         $wheregroup = ' AND g.groupid = ? AND g.userid = c.userid';
         $params[] = $group;
@@ -1078,7 +1081,10 @@ function feedback_get_complete_users($cm,
 
     $fromgroup = '';
     $wheregroup = '';
-    if ($group) {
+    if ($group == USERSWITHOUTGROUP) {
+        $fromgroup = ' LEFT JOIN {groups_members} g ON c.userid = g.userid';
+        $wheregroup = ' AND g.groupid IS NULL';
+    } else {
         $fromgroup = ', {groups_members} g';
         $wheregroup = ' AND g.groupid = :group AND g.userid = c.userid';
         $params['group'] = $group;
@@ -2147,27 +2153,38 @@ function feedback_get_group_values($item,
     global $CFG, $DB;
 
     //if the groupid is given?
-    if (intval($groupid) > 0) {
+    if (intval($groupid) > 0 || intval($groupid) == USERSWITHOUTGROUP) {
         $params = array();
         if ($ignore_empty) {
             $value = $DB->sql_compare_text('fbv.value');
-            $ignore_empty_select = "AND $value != :emptyvalue AND $value != :zerovalue";
+            $ignoreemptyselect = "AND $value != :emptyvalue AND $value != :zerovalue";
             $params += array('emptyvalue' => '', 'zerovalue' => '0');
         } else {
-            $ignore_empty_select = "";
+            $ignoreemptyselect = "";
         }
 
-        $query = 'SELECT fbv .  *
-                    FROM {feedback_value} fbv, {feedback_completed} fbc, {groups_members} gm
-                   WHERE fbv.item = :itemid
-                         AND fbv.completed = fbc.id
-                         AND fbc.userid = gm.userid
-                         '.$ignore_empty_select.'
-                         AND gm.groupid = :groupid
-                ORDER BY fbc.timemodified';
-        $params += array('itemid' => $item->id, 'groupid' => $groupid);
-        $values = $DB->get_records_sql($query, $params);
+        if (intval($groupid) == USERSWITHOUTGROUP) {
+            $query = "SELECT fbv .  *
+                        FROM {feedback_value} fbv JOIN {feedback_completed} fbc ON fbv.completed = fbc.id
+                   LEFT JOIN {groups_members} gm ON fbc.userid = gm.userid
+                       WHERE fbv.item = :itemid
+                             $ignoreemptyselect
+                             AND gm.groupid IS NULL
+                    ORDER BY fbc.timemodified";
+            $params += array('itemid' => $item->id);
+        } else {
+            $query = "SELECT fbv .  *
+                        FROM {feedback_value} fbv, {feedback_completed} fbc, {groups_members} gm
+                       WHERE fbv.item = :itemid
+                             AND fbv.completed = fbc.id
+                             AND fbc.userid = gm.userid
+                             $ignoreemptyselect
+                             AND gm.groupid = :groupid
+                    ORDER BY fbc.timemodified";
+            $params += array('itemid' => $item->id, 'groupid' => $groupid);
+        }
 
+        $values = $DB->get_records_sql($query, $params);
     } else {
         $params = array();
         if ($ignore_empty) {
@@ -2257,14 +2274,23 @@ function feedback_get_completeds_group($feedback, $groupid = false, $courseid = 
         if ($courseid) {
             $query = "SELECT DISTINCT fbc.*
                         FROM {feedback_completed} fbc, {feedback_value} fbv
-                        WHERE fbc.id = fbv.completed
-                            AND fbc.feedback = ?
-                            AND fbv.course_id = ?
-                        ORDER BY random_response";
+                       WHERE fbc.id = fbv.completed
+                             AND fbc.feedback = ?
+                             AND fbv.course_id = ?
+                    ORDER BY random_response";
             if ($values = $DB->get_records_sql($query, array($feedback->id, $courseid))) {
                 return $values;
             } else {
                 return false;
+            }
+        } else if (intval($groupid) == USERSWITHOUTGROUP) {
+            $query = "SELECT fbc.*
+                        FROM {feedback_completed} fbc
+                   LEFT JOIN {groups_members} gm ON fbc.userid = gm.userid
+                       WHERE fbc.feedback = ?
+                             AND gm.userid IS NULL";
+            if ($values = $DB->get_records_sql($query, array($feedback->id))) {
+                return $values;
             }
         } else {
             if ($values = $DB->get_records('feedback_completed', array('feedback'=>$feedback->id))) {
@@ -2328,11 +2354,11 @@ function feedback_delete_all_completeds($feedback, $cm = null, $course = null) {
     }
 
     if (!$course && !($course = $DB->get_record('course', array('id' => $feedback->course)))) {
-        return false;
+        return;
     }
 
     if (!$cm && !($cm = get_coursemodule_from_instance('feedback', $feedback->id))) {
-        return false;
+        return;
     }
 
     foreach ($completeds as $completed) {

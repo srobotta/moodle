@@ -40,6 +40,9 @@ class actionmenu implements templatable, renderable {
     /** @var int The course module ID. */
     private $cmid;
 
+    /** @var array The base params for the action buttons */
+    private $urlbaseparams;
+
     /**
      * Constructor for this object.
      *
@@ -57,9 +60,35 @@ class actionmenu implements templatable, renderable {
      */
     public function export_for_template(\renderer_base $output): array {
         return [
-            'submissionlink' => (new moodle_url('/mod/assign/view.php', ['id' => $this->cmid, 'action' => 'grading']))->out(false),
-            'gradelink' => (new moodle_url('/mod/assign/view.php', ['id' => $this->cmid, 'action' => 'grader']))->out(false)
+            'submissionlink' => (new moodle_url('/mod/assign/view.php', $this->build_url_params('grading')))->out(false),
+            'gradelink' => (new moodle_url('/mod/assign/view.php', $this->build_url_params('grader')))->out(false),
         ];
     }
 
+    /**
+     * Build parameters for the links. The base parameters of the link are the course module id and a group id, if used.
+     * The additional parameter that is build is the action parameter.
+     *
+     * @param string|null $action
+     * @return array
+     */
+    private function build_url_params(?string $action = ''): array {
+        global $DB;
+
+        if ($this->urlbaseparams === null) {
+            $this->urlbaseparams = [
+                'id' => $this->cmid,
+            ];
+            $cm = $DB->get_record('course_modules', array('id' => $this->cmid));
+            $group = groups_get_activity_group($cm);
+            if ($group !== false) {
+                $this->urlbaseparams['group'] = $group;
+            }
+        }
+        $params = $this->urlbaseparams;
+        if (!empty($action)) {
+            $params['action'] = $action;
+        }
+        return $params;
+    }
 }

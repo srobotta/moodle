@@ -539,7 +539,8 @@ function mod_assign_cm_info_dynamic(cm_info $cm) {
         ];
         $groupings = groups_get_user_groups($cm->course, $USER->id);
         foreach ($groupings[0] as $groupid) {
-            $groupoverride = $cache->get("{$cm->instance}_g_{$groupid}");
+            $cachekey = $cm->instance . '_g_' . ($groupid == USERSWITHOUTGROUP ? '' : $groupid);
+            $groupoverride = $cache->get($cachekey);
             if ($groupoverride) {
                 if ($groupoverride->sortorder < $selectedgroupoverride->sortorder) {
                     $selectedgroupoverride = $groupoverride;

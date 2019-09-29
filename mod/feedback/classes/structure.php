@@ -306,16 +306,32 @@ class mod_feedback_structure {
     public function count_completed_responses($groupid = 0) {
         global $DB;
         if (intval($groupid) > 0) {
-            $query = "SELECT COUNT(DISTINCT fbc.id)
-                        FROM {feedback_completed} fbc, {groups_members} gm
-                        WHERE fbc.feedback = :feedback
-                            AND gm.groupid = :groupid
-                            AND fbc.userid = gm.userid";
+            $query = "
+                SELECT COUNT(DISTINCT fbc.id)
+                  FROM {feedback_completed} fbc, {groups_members} gm
+                 WHERE fbc.feedback = :feedback
+                       AND gm.groupid = :groupid
+                       AND fbc.userid = gm.userid
+            ";
         } else if ($this->courseid) {
-            $query = "SELECT COUNT(fbc.id)
-                        FROM {feedback_completed} fbc
-                        WHERE fbc.feedback = :feedback
-                            AND fbc.courseid = :courseid";
+            $query = "
+                SELECT COUNT(fbc.id)
+                  FROM {feedback_completed} fbc
+                 WHERE fbc.feedback = :feedback
+                       AND fbc.courseid = :courseid
+            ";
+        } else if (intval($groupid) == USERSWITHOUTGROUP) {
+            $query = "
+                SELECT COUNT(DISTINCT fbc.id)
+                  FROM {feedback_completed} fbc
+                 WHERE fbc.feedback = :feedback
+                       AND fbc.userid IN (
+                              SELECT u.id FROM {user} u
+                           LEFT JOIN {groups_members} gm
+                                  ON u.id = gm.userid
+                               WHERE gm.userid IS NULL
+                       )
+            ";
         } else {
             $query = "SELECT COUNT(fbc.id) FROM {feedback_completed} fbc WHERE fbc.feedback = :feedback";
         }

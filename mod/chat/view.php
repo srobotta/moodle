@@ -20,9 +20,10 @@ require(__DIR__.'/../../config.php');
 require_once($CFG->dirroot . '/mod/chat/lib.php');
 require_once($CFG->libdir . '/completionlib.php');
 
-$id   = optional_param('id', 0, PARAM_INT);
-$c    = optional_param('c', 0, PARAM_INT);
+$id = optional_param('id', 0, PARAM_INT);
+$c = optional_param('c', 0, PARAM_INT);
 $edit = optional_param('edit', -1, PARAM_BOOL);
+$group = optional_param('group', 0, PARAM_INT);
 
 if ($id) {
     if (! $cm = get_coursemodule_from_id('chat', $id)) {
@@ -85,13 +86,13 @@ $strcurrentusers = get_string('currentusers', 'chat');
 
 // Check to see if groups are being used here.
 $groupmode = groups_get_activity_groupmode($cm);
-$currentgroup = groups_get_activity_group($cm, true);
+$currentgroup = ($group !== 0) ? $group : groups_get_activity_group($cm, true);
 
 // URL parameters.
 $params = array();
 if ($currentgroup) {
     $groupselect = " AND groupid = '$currentgroup'";
-    $groupparam = "_group{$currentgroup}";
+    $groupparam = ($currentgroup == USERSWITHOUTGROUP) ? "_participantsnotingroup" : "_group{$currentgroup}";
     $params['groupid'] = $currentgroup;
 } else {
     $groupselect = "";

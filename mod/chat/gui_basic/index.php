@@ -18,15 +18,30 @@ require_once('../../../config.php');
 require_once('../lib.php');
 
 $id      = required_param('id', PARAM_INT);
-$groupid = optional_param('groupid', 0, PARAM_INT);  // Only for teachers.
 $message = optional_param('message', '', PARAM_CLEANHTML);
 $refresh = optional_param('refresh', '', PARAM_RAW); // Force refresh.
 $last    = optional_param('last', 0, PARAM_INT);     // Last time refresh or sending.
 $newonly = optional_param('newonly', 0, PARAM_BOOL); // Show only new messages.
 
+
+
+if (!$chat = $DB->get_record('chat', array('id' => $id))) {
+    throw new \moodle_exception('invalidid', 'chat');
+}
+
+if (!$course = $DB->get_record('course', array('id' => $chat->course))) {
+    throw new \moodle_exception('invalidcourseid');
+}
+
+if (!$cm = get_coursemodule_from_instance('chat', $chat->id, $course->id)) {
+    throw new \moodle_exception('invalidcoursemodule');
+}
+
+$settings = chat_get_group_settings($cm);
+
 $url = new moodle_url('/mod/chat/gui_basic/index.php', array('id' => $id));
-if ($groupid !== 0) {
-    $url->param('groupid', $groupid);
+if ($settings->groupid !== 0) {
+    $url->param('groupid', $settings->groupid);
 }
 if ($message !== 0) {
     $url->param('message', $message);
@@ -42,47 +57,20 @@ if ($newonly !== 0) {
 }
 $PAGE->set_url($url);
 
-if (!$chat = $DB->get_record('chat', array('id' => $id))) {
-    throw new \moodle_exception('invalidid', 'chat');
-}
-
-if (!$course = $DB->get_record('course', array('id' => $chat->course))) {
-    throw new \moodle_exception('invalidcourseid');
-}
-
-if (!$cm = get_coursemodule_from_instance('chat', $chat->id, $course->id)) {
-    throw new \moodle_exception('invalidcoursemodule');
-}
-
 $context = context_module::instance($cm->id);
 require_login($course, false, $cm);
 require_capability('mod/chat:chat', $context);
 $PAGE->set_pagelayout('popup');
 $PAGE->set_popup_notification_allowed(false);
 
-// Check to see if groups are being used here.
-if ($groupmode = groups_get_activity_groupmode($cm)) { // Groups are being used.
-    if ($groupid = groups_get_activity_group($cm)) {
-        if (!$group = groups_get_group($groupid)) {
-            throw new \moodle_exception('invalidgroupid');
-        }
-        $groupname = ': '.$group->name;
-    } else {
-        $groupname = ': '.get_string('allparticipants');
-    }
-} else {
-    $groupid = 0;
-    $groupname = '';
-}
-
 $strchat  = get_string('modulename', 'chat'); // Must be before current_language() in chat_login_user() to force course language!
 $strchats = get_string('modulenameplural', 'chat');
 $stridle  = get_string('idle', 'chat');
-if (!$chatsid = chat_login_user($chat->id, 'basic', $groupid, $course)) {
+if (!$chatsid = chat_login_user($chat->id, 'basic', $settings->groupid, $course)) {
     throw new \moodle_exception('cantlogin', 'chat');
 }
 
-if (!$chatusers = chat_get_users($chat->id, $groupid, $cm->groupingid)) {
+if (!$chatusers = chat_get_users($chat->id, $settings->groupid, $cm->groupingid)) {
     throw new \moodle_exception('errornousers', 'chat');
 }
 
@@ -116,11 +104,14 @@ if (!empty($refresh) and data_submitted()) {
 
     chat_delete_old_users();
 
-    $url = new moodle_url('/mod/chat/gui_basic/index.php', array('id' => $id, 'newonly' => $newonly, 'last' => $last));
+    $url = new moodle_url(
+        '/mod/chat/gui_basic/index.php',
+        [ 'id' => $id, 'newonly' => $newonly, 'last' => $last, 'groupid' => $settings->groupid]
+    );
     redirect($url);
 }
 
-$PAGE->set_title("$strchat: $course->shortname: ".format_string($chat->name, true)."$groupname");
+$PAGE->set_title("$strchat: $course->shortname: " . format_string($chat->name, true) . "$settings->groupname");
 echo $OUTPUT->header();
 echo $OUTPUT->container_start(null, 'page-mod-chat-gui_basic');
 
@@ -153,13 +144,21 @@ echo '<h2><label for="message">' . get_string('sendmessage', 'message');
 echo $OUTPUT->help_icon('usingchat', 'chat');
 echo '</label></h2>';
 echo '<div class="mb-1">';
-echo '<input type="text" id="message" class="form-control" name="message" value="'.s($refreshedmessage, true).'" size="60" />';
+if ($settings->readonly) {
+    echo '<div class="alert-warning p-1">' . get_string('readonly', 'chat') . '</div>';
+} else {
+    echo '<input type="text" id="message" class="form-control" name="message" value="'.s($refreshedmessage, true).'" size="60" />';
+}
 echo '</div><div class="mb-1">';
 echo '<input type="hidden" name="id" value="'.$id.'" />';
-echo '<input type="hidden" name="groupid" value="'.$groupid.'" />';
+echo '<input type="hidden" name="groupid" value="'.$settings->groupid.'" />';
 echo '<input type="hidden" name="last" value="'.time().'" />';
 echo '<input type="hidden" name="sesskey" value="'.sesskey().'" />';
-echo '<input type="submit" class="btn btn-primary" value="'.get_string('submit').'" />&nbsp;';
+echo '<input type="submit" class="btn btn-primary" value="' . get_string('submit') . '"';
+if ($settings->readonly) {
+    echo ' disabled="true"';
+}
+echo ' />&nbsp;';
 echo '<input type="submit" class="btn btn-secondary" name="refresh" value="'.get_string('refresh').'" />';
 echo '<input type="checkbox" class="mx-1" name="newonly" id="newonly" '.($newonly ? 'checked="checked" ' : '').'/>';
 echo '<label for="newonly">'.get_string('newonlymsg', 'message').'</label>';
@@ -175,7 +174,7 @@ $options = new stdClass();
 $options->para = false;
 $options->newlines = true;
 
-$params = array('last' => $last, 'groupid' => $groupid, 'chatid' => $chat->id, 'chatentered' => $chatentered);
+$params = array('last' => $last, 'groupid' => $settings->groupid, 'chatid' => $chat->id, 'chatentered' => $chatentered);
 
 if ($newonly) {
     $lastsql = "AND timestamp > :last";
@@ -183,7 +182,7 @@ if ($newonly) {
     $lastsql = "";
 }
 
-$groupselect = $groupid ? "AND (groupid=:groupid OR groupid=0)" : "";
+$groupselect = $settings->groupid ? "AND (groupid=:groupid OR groupid=0)" : "";
 
 $messages = $DB->get_records_select("chat_messages_current",
                     "chatid = :chatid AND timestamp > :chatentered $lastsql $groupselect", $params,

@@ -2638,7 +2638,7 @@ class assign {
         if ($this->get_instance()->teamsubmission) {
 
             $groupsstr = '';
-            if ($currentgroup != 0) {
+            if ($currentgroup != 0 && $currentgroup != USERSWITHOUTGROUP) {
                 // If there is an active group we should only display the current group users groups.
                 $participants = $this->list_participants($currentgroup, true);
                 $groups = groups_get_all_groups($this->get_course()->id,
@@ -10078,7 +10078,7 @@ function assign_process_group_deleted_in_course($courseid, $groupid = null) {
     global $DB;
 
     $params = array('courseid' => $courseid);
-    if ($groupid) {
+    if ($groupid > 0) {
         $params['groupid'] = $groupid;
         // We just update the group that was deleted.
         $sql = "SELECT o.id, o.assignid, o.groupid

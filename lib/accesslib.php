@@ -3890,16 +3890,25 @@ function get_users_by_capability(context $context, $capability, $fields = '', $s
 
     // Groups.
     if ($groups) {
-        $groups = (array)$groups;
-        list($grouptest, $grpparams) = $DB->get_in_or_equal($groups, SQL_PARAMS_NAMED, 'grp');
-        $joins[] = "LEFT OUTER JOIN (SELECT DISTINCT userid
-                                       FROM {groups_members}
-                                      WHERE groupid $grouptest
-                                    ) gm ON gm.userid = u.id";
+        if ($groups != USERSWITHOUTGROUP) {
+            $groups = (array)$groups;
+            list($grouptest, $grpparams) = $DB->get_in_or_equal($groups, SQL_PARAMS_NAMED, 'grp');
+            $joins[] = "LEFT OUTER JOIN
+                            (SELECT DISTINCT userid
+                                        FROM {groups_members}
+                                       WHERE groupid $grouptest
+                            ) gm ON gm.userid = u.id";
 
-        $params = array_merge($params, $grpparams);
+            $params = array_merge($params, $grpparams);
 
-        $grouptest = 'gm.userid IS NOT NULL';
+            $grouptest = 'gm.userid IS NOT NULL';
+        } else {
+            $grouptest = "(u.id IN (SELECT distinct u1.id FROM {user} u1
+                                 LEFT JOIN {groups_members} gm1
+                                        ON gm1.userid = u1.id
+                                     WHERE gm1.userid IS NULL)
+                          )";
+        }
         if ($useviewallgroups) {
             $viewallgroupsusers = get_users_by_capability($context, 'moodle/site:accessallgroups', 'u.id, u.id', '', '', '', '', $exceptions);
             if (!empty($viewallgroupsusers)) {

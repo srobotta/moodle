@@ -140,6 +140,7 @@ $string['privacy:metadata:messages:issystem'] = 'Whether the message is a system
 $string['privacy:metadata:messages:message'] = 'The message';
 $string['privacy:metadata:messages:timestamp'] = 'The time when the message was sent.';
 $string['privacy:metadata:messages:userid'] = 'The user ID of the author of the message';
+$string['readonly'] = 'You are not a member of this group, therefore you may read but cannot post messages.';
 $string['refreshroom'] = 'Refresh room';
 $string['refreshuserlist'] = 'Refresh user list';
 $string['removemessages'] = 'All messages';

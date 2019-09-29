@@ -1279,6 +1279,15 @@ class locallib_test extends \advanced_testcase {
         $this->assertEquals(2, $assign->count_teams());
     }
 
+    /**
+     * Tests the count of submissions to the assignment.
+     * Change groups to the following cases:
+     * - all participants
+     * - specific group (where the student is not member of)
+     * - participants not in a group.
+     * @covers \assign::count_submissions_with_status
+     * @covers \assign::get_submission_group
+     */
     public function test_submit_to_default_group(): void {
         global $DB, $SESSION;
 
@@ -1305,14 +1314,17 @@ class locallib_test extends \advanced_testcase {
         $this->add_submission($student, $assign);
         $this->submit_for_grading($student, $assign);
 
-        // Set active groups to all groups.
+        // Set active group "All participants".
         $this->setUser($teacher);
         $SESSION->activegroup[$course->id]['aag'][0] = 0;
         $this->assertEquals(1, $assign->count_submissions_with_status(ASSIGN_SUBMISSION_STATUS_SUBMITTED));
 
-        // Set an active group.
+        // Set an active group where the student is not member of.
         $SESSION->activegroup[$course->id]['aag'][0] = (int) $group->id;
         $this->assertEquals(0, $assign->count_submissions_with_status(ASSIGN_SUBMISSION_STATUS_SUBMITTED));
+
+        // Set group to "Participant not in a group".
+        $this->assertEquals(1, $assign->count_submissions_with_status(ASSIGN_SUBMISSION_STATUS_SUBMITTED, USERSWITHOUTGROUP));
     }
 
     public function test_count_submissions_no_draft(): void {
@@ -1444,7 +1456,7 @@ class locallib_test extends \advanced_testcase {
         $SESSION->activegroup[$course->id]['aag'][0] = $group->id;
         $this->assertEquals(1, $assign->count_submissions_with_status(ASSIGN_SUBMISSION_STATUS_SUBMITTED));
 
-        // The user should still be listed when fetching just their group.
+        // The user should not be listed when fetching any other group.
         $SESSION->activegroup[$course->id]['aag'][0] = $othergroup->id;
         $this->assertEquals(0, $assign->count_submissions_with_status(ASSIGN_SUBMISSION_STATUS_SUBMITTED));
     }

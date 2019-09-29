@@ -96,8 +96,17 @@ if (!has_capability('mod/data:manageentries', $context)) {
             throw new \moodle_exception('noaccess', 'data');
         }
     } else if (!data_user_can_add_entry($data, $currentgroup, $groupmode, $context)) {
-        // User is trying to create a new record.
-        throw new \moodle_exception('noaccess', 'data');
+        // If we are using groups and user is not allowed to add entries in the current group
+        // reset group to 0 (all participants) and check if user is allowed now.
+        if ($groupmode > 0 && $currentgroup ) {
+            $currentgroup = $preselect = 0;
+            if (!data_user_can_add_entry($data, $currentgroup, $groupmode, $context)) {
+                throw new \moodle_exception('noaccess', 'data');
+            }
+        } else {
+            // User is trying to create a new record.
+            throw new \moodle_exception('noaccess', 'data');
+        }
     }
 }
 
@@ -184,7 +193,11 @@ if ($datarecord && confirm_sesskey()) {
 
 echo $OUTPUT->header();
 
-groups_print_activity_menu($cm, $CFG->wwwroot.'/mod/data/edit.php?d='.$data->id);
+if (isset($preselect)) {
+    groups_print_activity_menu($cm, $CFG->wwwroot . '/mod/data/edit.php?d=' . $data->id, false, 2, $preselect);
+} else {
+    groups_print_activity_menu($cm, $CFG->wwwroot . '/mod/data/edit.php?d=' . $data->id);
+}
 
 // Form goes here first in case add template is empty.
 echo '<form enctype="multipart/form-data" action="edit.php" method="post">';
@@ -192,6 +205,9 @@ echo '<div>';
 echo '<input name="d" value="'.$data->id.'" type="hidden" />';
 echo '<input name="rid" value="'.$rid.'" type="hidden" />';
 echo '<input name="sesskey" value="'.sesskey().'" type="hidden" />';
+if ($groupmode) {
+    echo '<input name="group" value="' . $currentgroup . '" type="hidden" />';
+}
 echo $OUTPUT->box_start('generalbox boxaligncenter boxwidthwide');
 
 echo $OUTPUT->heading($pagename);
