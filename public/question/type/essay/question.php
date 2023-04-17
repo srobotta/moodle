@@ -223,6 +223,9 @@ class qtype_essay_question extends question_with_responses {
         } else if ($component == 'qtype_essay' && $filearea == 'graderinfo') {
             return $options->manualcomment && $args[0] == $this->id;
 
+        } else if ($component == 'qtype_essay' && $filearea == 'responsetemplate') {
+            return $args[0] == $this->id;
+
         } else {
             return parent::check_file_access($qa, $options, $component,
                     $filearea, $args, $forcedownload);
