@@ -48,7 +48,13 @@ class qtype_essay_renderer extends qtype_renderer {
 
         if (!$step->has_qt_var('answer') && empty($options->readonly)) {
             // Question has never been answered, fill it with response template.
-            $step = new question_attempt_step(array('answer' => $question->responsetemplate));
+            if (!empty($question->responsetemplate) && str_contains($question->responsetemplate, '@@PLUGINFILE@@') !== false) {
+                $answer = $question->format_text($question->responsetemplate, $question->responsetemplateformat,
+                    $qa, 'qtype_essay', 'responsetemplate', $question->id);
+            } else {
+                $answer = $question->responsetemplate;
+            }
+            $step = new question_attempt_step(['answer' => $answer]);
         }
 
         if (empty($options->readonly)) {
@@ -232,7 +238,7 @@ abstract class qtype_essay_format_renderer_base extends plugin_renderer_base {
     }
 
     /**
-     * Render the students respone when the question is in read-only mode.
+     * Render the students response when the question is in read-only mode.
      * @param string $name the variable name this input edits.
      * @param question_attempt $qa the question attempt being display.
      * @param question_attempt_step $step the current step.

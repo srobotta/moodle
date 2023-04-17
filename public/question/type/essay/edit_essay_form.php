@@ -100,7 +100,7 @@ class qtype_essay_edit_form extends question_edit_form {
 
         $mform->addElement('header', 'responsetemplateheader', get_string('responsetemplateheader', 'qtype_essay'));
         $mform->addElement('editor', 'responsetemplate', get_string('responsetemplate', 'qtype_essay'),
-                array('rows' => 10),  array_merge($this->editoroptions, array('maxfiles' => 0)));
+                ['rows' => 10],  $this->editoroptions);
         $mform->addHelpButton('responsetemplate', 'responsetemplate', 'qtype_essay');
 
         $mform->addElement('header', 'graderinfoheader', get_string('graderinfoheader', 'qtype_essay'));
@@ -142,9 +142,20 @@ class qtype_essay_edit_form extends question_edit_form {
         $question->graderinfo['format'] = $question->options->graderinfoformat;
         $question->graderinfo['itemid'] = $draftid;
 
-        $question->responsetemplate = array(
-            'text' => $question->options->responsetemplate,
+        $draftid = file_get_submitted_draft_itemid('responsetemplate');
+        $question->responsetemplate = [
             'format' => $question->options->responsetemplateformat,
+            'itemid' => $draftid,
+        ];
+
+        $question->responsetemplate['text'] = file_prepare_draft_area(
+            $draftid,
+            $this->context->id,
+            'qtype_essay',
+            'responsetemplate',
+            !empty($question->id) ? (int) $question->id : null,
+            $this->fileoptions,
+            $question->options->responsetemplate
         );
 
         return $question;
