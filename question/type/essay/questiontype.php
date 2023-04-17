@@ -95,6 +95,10 @@ class qtype_essay extends question_type {
         $options->graderinfoformat = $formdata->graderinfo['format'];
         $options->responsetemplate = $formdata->responsetemplate['text'];
         $options->responsetemplateformat = $formdata->responsetemplate['format'];
+        if (!empty($options->responsetemplate) && !empty($formdata->responsetemplate['itemid'])) {
+            $options->responsetemplate = $this->import_or_save_files($formdata->responsetemplate,
+                    $context, 'qtype_essay', 'responsetemplate', $formdata->id);
+        }
         $DB->update_record('qtype_essay_options', $options);
     }
 
