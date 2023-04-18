@@ -101,9 +101,6 @@ class text_filter extends \core_filters\text_filter {
                 continue;
             }
 
-            // Sanitize the decoded string, because $this->get_image_markup() injects the final string between script tags.
-            $texexp = clean_param($texexp, PARAM_TEXT);
-
             $md5 = md5($texexp);
             if (!$DB->record_exists("cache_filters", ["filter" => "tex", "md5key" => $md5])) {
                 $texcache = new stdClass();
@@ -199,9 +196,47 @@ class text_filter extends \core_filters\text_filter {
             $action = new popup_action('click', $link, 'popup', ['width' => 320, 'height' => 240]);
         }
         // TODO: the popups do not work when text caching is enabled.
-        $output = $OUTPUT->action_link($link, $anchorcontents, $action, ['title' => 'TeX']);
-        $output = "<span class=\"MathJax_Preview\">$output</span><script type=\"math/tex\">$tex</script>";
+        $output = $OUTPUT->action_link($link, $anchorcontents, $action, array('title'=>'TeX'));
+        $output = sprintf(
+            '<span class="MathJax_Preview">%s</span><script type="math/tex">%s</script>',
+            $output,
+            $this->strip_html_from_tex($tex)
+        );
 
         return $output;
+    }
+
+    /**
+     * Strip html tags within a tex expression.
+     *
+     * @param string $term
+     * @return string
+     */
+    protected function strip_html_from_tex(string $term): string {
+        // Try to recognize html tags by syntax, not semantic. So <foo> is also recognized as a valid
+        // html tag. Remove the tags, to avoid any xss attacks. However, expessions with a single
+        // < needs to be preserved because e.g. "a < b" is a valid tex term.
+        while (true) {
+            $purged = preg_replace_callback(
+            // This pattern looks for <word> or <word with attributes>.
+                '~<[a-z]+([^>])*>~i',
+                function ($m) {
+                    // Here we replace any attribute="value" with an empty string -> works with single and double quotes
+                    // and with empty attributes e.g. selected. Attribute names may consist of alphanum chars of length
+                    // 2 at least, then there might follow a dash and more alphanum chars, to cover also attributes like:
+                    // data-id="".
+                    return preg_replace('/\s+\w{2,}(\-?\w+)?(=([\'"])(.*?)\3)?/', '', $m[0]);
+                },
+                $term
+            );
+            // Here all the possible attributes of the tags are removed therefore only look for <tag> or </tag> or <tag />.
+            $purged = preg_replace('~</?[a-z]+( */)?>~i', '', $purged);
+            // Check whether we had replacements, to cover child tags as well. If nothing was replaced we are done.
+            if ($purged === $term) {
+                break;
+            }
+            $term = $purged;
+        }
+        return $purged;
     }
 }
