@@ -84,4 +84,72 @@ final class text_filter_test extends \advanced_testcase {
             ['$$', '\\]', false],
         ];
     }
+
+    /**
+     * Get a list of terms that are placed inside the tex markers so that the term should be recognized as a tex term
+     * and be processed by a tex processor. The array key is what the user provides and the array value is what the
+     * system should pass on to the tex processor.
+     *
+     * @return array
+     */
+    public static function get_texterms_for_filter(): array {
+        return [
+            ['alert(\'1\')', 'alert(\'1\')'],
+            ['</script><script>alert(\'2\')</script>', 'alert(\'2\')'],
+            ['<script>< / scrip t> </s</script>cript>alert(\'3\')</script>', '< / scrip t> alert(\'3\')'],
+            ['<img src="x" onerror="alert(\'4\')">', ''],
+            ['<img src="data:image/png;base64, iVBORw0KGgoAAJggg==" style="align: left;" onmouseover="alert(\'3\')" />', ''],
+            ['<br/>', ''],
+            ['<br>', ''],
+            ['<hr />', ''],
+            ['<select name="foo" data-id="123">', ''],
+            ['<a href="#" onmouseenter=\'alert(1);\' someattr>de < f</a>', 'de < f'],
+            ['<td >', '<td >'],
+            ['f(x) = x^2', 'f(x) = x^2'],
+            ['\frac{1}{\sqrt{x}}', '\frac{1}{\sqrt{x}}'],
+            ['x\ =\ \frac{\sqrt{144}}{2}\ \times\ (y\ +\ 12)', 'x\ =\ \frac{\sqrt{144}}{2}\ \times\ (y\ +\ 12)'],
+            ['3>\frac{ab}{cd}>1', '3>\frac{ab}{cd}>1'],
+            ['\[ x\ =\ \frac{\sqrt{144}}{2}\ \times\ (y\ +\ 12) \]', '\[ x\ =\ \frac{\sqrt{144}}{2}\ \times\ (y\ +\ 12) \]'],
+            ['<1,3,5>', '<1,3,5>'],
+            ['(2,3)>(1,4)', '(2,3)>(1,4)'],
+            ['3<4 and 5>\lambda', '3<4 and 5>\lambda'],
+            ['<13, 4, 12>', '<13, 4, 12>'],
+            ['a<b \cap c>d', 'a<b \cap c>d'],
+            // This last testcase is wrong, versus should be preserved however, that makes it more complicated for purging
+            // html. Besides in real live you probably use something like the previous example with a special char that
+            // starts with a backslash. To circumvent this behaviour, it's always good to add spaces before or after the <>.
+            ['a<b versus c>d', 'a<b c>d'],
+        ];
+    }
+
+    /**
+     * Test the tex filter, the rendered tex is inside this tag <script type="math/tex"> </script>.
+     *
+     * @covers \filter_tex::filter partially
+     */
+    public function test_filter(): void {
+        $this->resetAfterTest();
+        $filter = new text_filter(context_system::instance(), []);
+        $input = 'some text $$ <a href="#" onmouseenter=\'alert(1);\' someattr>de < f</a> $$ trailed by other text';
+        $this->assertStringContainsString(
+            '<script type="math/tex"> de < f </script> trailed by other text',
+            $filter->filter($input)
+        );
+    }
+
+    /**
+     * Test the filter function that is sanitizing the tex term before it can be used in the HTML inside the <script> tags.
+     *
+     * @covers \clean_tex_for_html
+     * @dataProvider get_texterms_for_filter
+     * @param string $in
+     * @param string $out
+     */
+    public function test_strip_html_from_tex($in, $out): void {
+        $this->resetAfterTest();
+        $class = new \ReflectionClass('\\filter_tex\\text_filter');
+        $method = $class->getMethod('strip_html_from_tex');
+        $filter = new text_filter(context_system::instance(), []);
+        $this->assertEquals($out, $method->invokeArgs($filter, [$in]));
+    }
 }
