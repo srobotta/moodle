@@ -82,4 +82,30 @@ class filter_test extends \advanced_testcase {
         $this->run_with_delimiters('$$', '\\]', false);
     }
 
+    /**
+     * Testcases for https://tracker.moodle.org/browse/MDL-72431.
+     * When tex expressions were used without spaces before or after <>() then these were stripped among other things
+     * from the expression.
+     * @covers \filter_tex::filter partially
+     * @return void
+     */
+    public function test_brakets_without_space() {
+
+        $texexpresions = [
+            ' < 12, 6, 12 > ', // This worked before without the fix because there are spaces around the <>.
+            '<8,10,12>',
+            '6<12',
+            '4>\pi',
+            '(a + b)=(b+a)',
+            '(a + b)^2 = a^2 + 2ab + b^2',
+        ];
+        foreach ($texexpresions as $in) {
+            $before = 'some text $$' . $in . '$$ trailed by other text';
+            $after = trim($this->filter->filter($before));
+            $pos1 = strpos($after, '<script type="math/tex">');
+            $pos2 = ($pos1 !== false) ? strpos($after, '</script>', $pos1) : false;
+            $rendertex = ($pos2 !== false) ? substr($after, $pos1 + 24, $pos2 - $pos1 - 24) : '';
+            $this->assertEquals($in, $rendertex);
+        }
+    }
 }

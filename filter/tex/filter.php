@@ -190,7 +190,18 @@ class filter_tex extends moodle_text_filter {
             }
 
             // Sanitize the decoded string, because filter_text_image() injects the final string between script tags.
+            // However, <>() without spaces are not converted correctly. Therefore, we replace them with a token that
+            // is then restored afterwards.
+            $problematicchars = ['<', '>', '(', ')'];
+            foreach (\array_keys($problematicchars) as $k) {
+                $texexp = str_replace($problematicchars[$k], '~!' . $k . '!~', $texexp);
+            }
+            // This function cleans the text now.
             $texexp = clean_param($texexp, PARAM_TEXT);
+            // Restore the tokens with ther original value again.
+            foreach (\array_keys($problematicchars) as $k) {
+                $texexp = str_replace('~!' . $k . '!~', $problematicchars[$k], $texexp);
+            }
 
             $md5 = md5($texexp);
             if (!$DB->record_exists("cache_filters", array("filter"=>"tex", "md5key"=>$md5))) {
