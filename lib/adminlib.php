@@ -4401,6 +4401,9 @@ class admin_setting_users_with_capability extends admin_setting_configmultiselec
     public function get_defaultsetting() {
         $this->load_choices();
         $defaultsetting = parent::get_defaultsetting();
+        if (\is_array($defaultsetting)) {
+            $defaultsetting = reset($defaultsetting);
+        }
         if (empty($defaultsetting)) {
             return array('$@NONE@$');
         } else if (array_key_exists($defaultsetting, $this->choices)) {
