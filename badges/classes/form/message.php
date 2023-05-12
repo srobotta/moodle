@@ -88,7 +88,45 @@ class message extends moodleform {
         $mform->addElement('select', 'notification', get_string('notification', 'badges'), $options);
         $mform->addHelpButton('notification', 'notification', 'badges');
 
+        $mform->addElement('text', 'notifyemail', get_string('notifyemail', 'badges'), ['size' => '70']);
+        $mform->setType('notifyemail', PARAM_TAGLIST);
+        $mform->addRule('notifyemail', get_string('notifyemail_err', 'badges'),
+            'callback', '\core_badges\form\message::validate_notifyemail');
+        $mform->addHelpButton('notifyemail', 'notifyemail', 'badges');
+
         $this->add_action_buttons();
         $this->set_data($badge);
+    }
+
+    /**
+     * Validates the field, by splitting the string by the "," to validate each of the email addresses if they are
+     * syntactically correct.
+     *
+     * @param string|null $value
+     * @return bool
+     */
+    public static function validate_notifyemail(?string $value): bool {
+        global $CFG;
+
+        // Nothing to validate, we have an empty field.
+        if (trim($value) === '') {
+            return true;
+        }
+
+        // Include the Rule Registry to later validate the email addresses.
+        include_once($CFG->libdir . '/pear/HTML/QuickForm/RuleRegistry.php');
+        $registry =& \HTML_QuickForm_RuleRegistry::singleton();
+
+        // Split the field value by ",".
+        foreach (explode(',', $value) as $email) {
+            $email = trim($email);
+            if (empty($email)) {
+                continue;
+            }
+            if (!$registry->validate('email', $email)) {
+                return false;
+            }
+        }
+        return true;
     }
 }

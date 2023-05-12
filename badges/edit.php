@@ -137,6 +137,7 @@ if ($form->is_cancelled()) {
         $badge->message = clean_text($data->message_editor['text'], FORMAT_HTML);
         $badge->messagesubject = $data->messagesubject;
         $badge->notification = $data->notification;
+        $badge->notifyemail = $data->notifyemail;
         $badge->attachment = $data->attachment;
 
         unset($badge->messageformat);

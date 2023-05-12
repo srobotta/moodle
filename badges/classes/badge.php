@@ -102,6 +102,9 @@ class badge {
     /** @var int Send a message when this badge is awarded. */
     public $notification;
 
+    /** @var string A list of email addresses separated by comma to send out the notification message to. */
+    public $notifyemail;
+
     /** @var int Lifecycle status for this badge. */
     public $status = 0;
 
