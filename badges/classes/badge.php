@@ -94,6 +94,9 @@ class badge {
     /** @var int Send a message when this badge is awarded. */
     public $notification;
 
+    /** @var string A list of email addresses separated by comma to send out the notification message to. */
+    public $notifyemail;
+
     /** @var int Lifecycle status for this badge. */
     public $status = 0;
 
@@ -1090,6 +1093,7 @@ class badge {
         $this->message = clean_text($data->message_editor['text'], FORMAT_HTML);
         $this->messagesubject = $data->messagesubject;
         $this->notification = $data->notification;
+        $this->notifyemail = $data->notifyemail ?? '';
         $this->attachment = $data->attachment;
 
         unset($this->messageformat);

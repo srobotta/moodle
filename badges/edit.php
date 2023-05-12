@@ -176,6 +176,7 @@ if ($form->is_cancelled()) {
                 $errormsg = get_string('error:save', 'badges');
             }
             break;
+        }
     }
 }
 

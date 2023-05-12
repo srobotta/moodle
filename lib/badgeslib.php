@@ -195,12 +195,11 @@ function badges_notify_badge_award(badge $badge, $userid, $issued, $filepathhash
         message_send($eventdata);
     }
 
-    // Notify badge creator about the award if they receive notifications every time.
-    if ($badge->notification == 1) {
+    // Notify badge notifyemail recipients about the award if they receive notifications every time.
+    if ($badge->notification == 1 && !empty($badge->notifyemail)) {
         $userfrom = core_user::get_noreply_user();
         $userfrom->maildisplay = true;
 
-        $creator = $DB->get_record('user', array('id' => $badge->usercreated), '*', MUST_EXIST);
         $a = new stdClass();
         $a->user = fullname($userto);
         $a->link = $issuedlink;
@@ -212,7 +211,6 @@ function badges_notify_badge_award(badge $badge, $userid, $issued, $filepathhash
         $eventdata->component         = 'moodle';
         $eventdata->name              = 'badgecreatornotice';
         $eventdata->userfrom          = $userfrom;
-        $eventdata->userto            = $creator;
         $eventdata->notification      = 1;
         $eventdata->contexturl        = $badgeurl;
         $eventdata->contexturlname    = $badge->name;
@@ -227,13 +225,28 @@ function badges_notify_badge_award(badge $badge, $userid, $issued, $filepathhash
             'hash' => $issued,
         ];
 
-        message_send($eventdata);
+        // Create a fake user that we can use to send the "notify" mails to. The only modification for this fake user
+        // is the email address, taken from badge.notifyemail list.
+        $recipient = new stdClass();
+        $recipient->auth      = 'manual';
+        $recipient->suspended = false;
+        $recipient->deleted   = false;
+        $recipient->emailstop = false;
+        $recipient->id        = PHP_INT_MAX;
+        $recipient->username  = '';
+        // Set this user to the eventdata, email is exchanged in the loop below.
+        $eventdata->userto = $recipient;
+        foreach (explode(',', $badge->notifyemail) as $email) {
+            $recipient->email = $email;
+            message_send($eventdata);
+        }
+
         $DB->set_field('badge_issued', 'issuernotified', time(), array('badgeid' => $badge->id, 'userid' => $userid));
     }
 }
 
 /**
- * Caclulates date for the next message digest to badge creators.
+ * Calculates date for the next message digest to badge creators.
  *
  * @param int $schedule Type of message schedule BADGE_MESSAGE_DAILY|BADGE_MESSAGE_WEEKLY|BADGE_MESSAGE_MONTHLY.
  * @return int Timestamp for next cron
