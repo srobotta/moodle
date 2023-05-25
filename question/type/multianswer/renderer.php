@@ -279,7 +279,17 @@ class qtype_multianswer_textfield_renderer extends qtype_multianswer_subq_render
 
         $response = $qa->get_last_qt_var($fieldname);
         if ($subq->qtype->name() == 'shortanswer') {
-            $matchinganswer = $subq->get_matching_answer(array('answer' => $response));
+            if ($response !== null) {
+                // Filter the response, that's necessary when the correct answer from the db is used.
+                $response = filter_manager::instance()
+                    ->filter_string($response, context::instance_by_id(CONTEXT_SYSTEM));
+                // Filter the possible responses to get a match.
+                foreach ($subq->answers as $answer) {
+                    $answer->answer = format_string($answer->answer);
+                    $answer->feedback = format_string($answer->feedback);
+                }
+            }
+            $matchinganswer = $subq->get_matching_answer(['answer' => $response]);
         } else if ($subq->qtype->name() == 'numerical') {
             list($value, $unit, $multiplier) = $subq->ap->apply_units($response, '');
             $matchinganswer = $subq->get_matching_answer($value, 1);
@@ -298,7 +308,7 @@ class qtype_multianswer_textfield_renderer extends qtype_multianswer_subq_render
         // Work out a good input field size.
         $size = max(1, core_text::strlen(trim($response ?? '')) + 1);
         foreach ($subq->answers as $ans) {
-            $size = max($size, core_text::strlen(trim($ans->answer)));
+            $size = max($size, core_text::strlen(format_string($ans->answer)));
         }
         $size = min(60, round($size + rand(0, (int)($size * 0.15))));
         // The rand bit is to make guessing harder.
@@ -330,7 +340,8 @@ class qtype_multianswer_textfield_renderer extends qtype_multianswer_subq_render
         $feedbackpopup = $this->feedback_popup($subq, $matchinganswer->fraction,
                 $subq->format_text($matchinganswer->feedback, $matchinganswer->feedbackformat,
                         $qa, 'question', 'answerfeedback', $matchinganswer->id),
-                s($correctanswer->answer), $options);
+                s(format_string($correctanswer->answer)),
+                $options);
 
         $output = html_writer::start_tag('span', ['class' => 'subquestion']);
 
