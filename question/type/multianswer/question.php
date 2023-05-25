@@ -300,6 +300,13 @@ class qtype_multianswer_question extends question_graded_automatically_with_coun
             if (!$subq->is_gradable_response($subresp)) {
                 $overallstate = $this->combine_states($overallstate, question_state::$gaveup);
             } else {
+                // If we have a shortanswer, use the system filters to get a plaintext response.
+                if ($subq->qtype->name() === 'shortanswer') {
+                    foreach ($subq->answers as $answer) {
+                        $answer->answer = format_string($answer->answer);
+                        $answer->feedback = format_string($answer->feedback);
+                    }
+                }
                 list($subfraction, $newstate) = $subq->grade_response($subresp);
                 $fractionsum += $subfraction * $subq->defaultmark;
                 $overallstate = $this->combine_states($overallstate, $newstate);
