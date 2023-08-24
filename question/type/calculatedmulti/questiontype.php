@@ -165,6 +165,20 @@ class qtype_calculatedmulti extends qtype_calculated {
         return true;
     }
 
+    /**
+     * Delete record in question_calcmulti_options.
+     * @param int $questionid
+     * @param int $contextid
+     * @return void
+     * @throws dml_exception
+     */
+    public function delete_question($questionid, $contextid)
+    {
+        global $DB;
+        $DB->delete_records('question_calcmulti_options', ['question' => $questionid]);
+        parent::delete_question($questionid, $contextid);
+    }
+
     protected function validate_answer($answer) {
         $error = qtype_calculated_find_formula_errors_in_text($answer);
         if ($error) {

@@ -43,6 +43,19 @@ class restore_qtype_calculatedmulti_plugin extends restore_qtype_calculated_plug
     }
 
     /**
+     * Returns the paths to be handled by the plugin at question level
+     */
+    protected function define_question_plugin_structure() {
+        $paths = parent::define_question_plugin_structure();
+
+        $elename = 'calculated_specificoption';
+        $elepath = $this->get_pathfor('/calculated_specificoptions/calculated_specificoption');
+        $paths[] = new restore_path_element($elename, $elepath);
+
+        return $paths;
+    }
+
+    /**
      * Given one question_states record, return the answer
      * recoded pointing to all the restored stuff for calculatedmulti questions
      *
@@ -68,5 +81,28 @@ class restore_qtype_calculatedmulti_plugin extends restore_qtype_calculated_plug
             $result = 'dataset' . $itemid . '-' . $newanswer;
         }
         return $result ? $result : $answer;
+    }
+
+    /**
+     * Process the qtype/calculated_option element
+     */
+    public function process_calculated_specificoption($data) {
+        global $DB;
+
+        // Detect if the question is created or mapped.
+        $oldquestionid   = $this->get_old_parentid('question');
+        $newquestionid   = $this->get_new_parentid('question');
+        $questioncreated = $this->get_mappingid('question_created', $oldquestionid) !== false;
+
+        // If the question has been created by restore, we need to create its
+        // question_calculated too.
+        if ($questioncreated) {
+            // Adjust some columns.
+            $obj = new stdClass();
+            $obj->question = $newquestionid;
+            $obj->allowhtml = $data['allowhtml'] ?? 0;
+            // Insert record.
+            $DB->insert_record('question_calcmulti_options', $obj);
+        }
     }
 }
