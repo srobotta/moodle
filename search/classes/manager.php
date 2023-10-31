@@ -680,6 +680,14 @@ class manager {
         return [$plugin, $configprefix];
     }
 
+    protected function get_areas_user_accesses_cache_file($limitcourseids = false, $limitcontextids = false): string {
+        global $CFG, $USER;
+
+        $cachekey = md5(json_encode([$USER->id, $limitcourseids, $limitcontextids]));
+        $cachefile = $CFG->tempdir . DIRECTORY_SEPARATOR . 'get_areas_user_accesses_' . $cachekey;
+        return $cachefile;
+    }
+
     /**
      * Returns information about the areas which the user can access.
      *
@@ -710,11 +718,24 @@ class manager {
             return (object)array('everything' => true);
         }
 
+        // Use file cache because of the size of the data.
+        $cachefile = $this->get_areas_user_accesses_cache_file($limitcourseids, $limitcontextids);
+        if (file_exists($cachefile)) {
+            $data = file_get_contents($cachefile);
+            if ($data !== false) {
+                $cacheddata = json_decode($data, true);
+            }
+            if (\is_array($cacheddata) && isset($cacheddata['created']) && $cacheddata['created'] > (time() - 600)) {
+                return (object)$cacheddata['contextinfo'];
+            }
+            @unlink($cachefile);
+        }
+
         $areasbylevel = array();
 
-        // Split areas by context level so we only iterate only once through courses and cms.
+        // Split areas by context level so we iterate only once through courses and cms.
         $searchareas = static::get_search_areas_list(true);
-        foreach ($searchareas as $areaid => $unused) {
+        foreach (\array_keys($searchareas) as $areaid) {
             $classname = static::get_area_classname($areaid);
             $searcharea = new $classname();
             foreach ($classname::get_levels() as $level) {
@@ -738,7 +759,7 @@ class manager {
             $systemcontextid = \context_system::instance()->id;
             if (!$limitcontextids || in_array($systemcontextid, $limitcontextids)) {
                 foreach ($areasbylevel[CONTEXT_SYSTEM] as $areaid => $searchclass) {
-                    $areascontexts[$areaid][$systemcontextid] = $systemcontextid;
+                    $areascontexts[$areaid][$systemcontextid] = 1;
                 }
             }
         }
@@ -747,8 +768,8 @@ class manager {
             if ($usercontext = \context_user::instance($USER->id, IGNORE_MISSING)) {
                 if (!$limitcontextids || in_array($usercontext->id, $limitcontextids)) {
                     // Extra checking although only logged users should reach this point, guest users have a valid context id.
-                    foreach ($areasbylevel[CONTEXT_USER] as $areaid => $searchclass) {
-                        $areascontexts[$areaid][$usercontext->id] = $usercontext->id;
+                    foreach (\array_keys($areasbylevel[CONTEXT_USER]) as $areaid) {
+                        $areascontexts[$areaid][$usercontext->id] = 1;
                     }
                 }
             }
@@ -787,9 +808,9 @@ class manager {
             if (!empty($areasbylevel[CONTEXT_COURSE]) &&
                     (!$limitcontextids || in_array($coursecontext->id, $limitcontextids))) {
                 // Add the course contexts the user can view.
-                foreach ($areasbylevel[CONTEXT_COURSE] as $areaid => $searchclass) {
+                foreach (\array_keys($areasbylevel[CONTEXT_COURSE]) as $areaid) {
                     if (!empty($mycourses[$course->id]) || \core_course_category::can_view_course_info($course)) {
-                        $areascontexts[$areaid][$coursecontext->id] = $coursecontext->id;
+                        $areascontexts[$areaid][$coursecontext->id] = 1;
                     }
                 }
             }
@@ -820,22 +841,22 @@ class manager {
                         }
                         if ($modinstance->uservisible) {
                             $contextid = $modinstance->context->id;
-                            $areascontexts[$areaid][$contextid] = $contextid;
+                            $areascontexts[$areaid][$contextid] = 1;
                             $modulecms[$modinstance->id] = $modinstance;
 
                             if (!has_capability('moodle/site:accessallgroups', $modinstance->context) &&
                                     ($searchclass instanceof base_mod) &&
                                     $searchclass->supports_group_restriction()) {
                                 if ($searchclass->restrict_cm_access_by_group($modinstance)) {
-                                    $separategroupscontexts[$contextid] = $contextid;
+                                    $separategroupscontexts[$contextid] = 1;
                                     $hasgrouprestrictions = true;
                                 } else {
                                     // Track a list of anything that has a group id (so might get
                                     // filtered) and doesn't want to be, in this context.
                                     if (!array_key_exists($contextid, $visiblegroupscontextsareas)) {
-                                        $visiblegroupscontextsareas[$contextid] = array();
+                                        $visiblegroupscontextsareas[$contextid] = [];
                                     }
-                                    $visiblegroupscontextsareas[$contextid][$areaid] = $areaid;
+                                    $visiblegroupscontextsareas[$contextid][$areaid] = 1;
                                 }
                             }
                         }
@@ -848,7 +869,7 @@ class manager {
             if ($hasgrouprestrictions) {
                 $groups = groups_get_all_groups($course->id, $USER->id, 0, 'g.id');
                 foreach ($groups as $group) {
-                    $usergroups[$group->id] = $group->id;
+                    $usergroups[$group->id] = 1;
                 }
             }
         }
@@ -866,8 +887,8 @@ class manager {
         if (!empty($areasbylevel[CONTEXT_BLOCK]) && !empty($coursecontextids)) {
             // Get list of all block types we care about.
             $blocklist = [];
-            foreach ($areasbylevel[CONTEXT_BLOCK] as $areaid => $searchclass) {
-                $blocklist[$searchclass->get_block_name()] = true;
+            foreach ($areasbylevel[CONTEXT_BLOCK] as $searchclass) {
+                $blocklist[$searchclass->get_block_name()] = 1;
             }
             list ($blocknamesql, $blocknameparams) = $DB->get_in_or_equal(array_keys($blocklist));
 
@@ -922,16 +943,29 @@ class manager {
                 }
                 foreach ($blockcontextsbyname[$searchclass->get_block_name()] as $context) {
                     if (has_capability('moodle/block:view', $context)) {
-                        $areascontexts[$areaid][$context->id] = $context->id;
+                        $areascontexts[$areaid][$context->id] = 1;
                     }
                 }
             }
         }
 
         // Return all the data.
-        return (object)array('everything' => false, 'usercontexts' => $areascontexts,
-                'separategroupscontexts' => $separategroupscontexts, 'usergroups' => $usergroups,
-                'visiblegroupscontextsareas' => $visiblegroupscontextsareas);
+        $contextinfo = [
+            'everything' => false,
+            'usercontexts' => $areascontexts,
+            'separategroupscontexts' => $separategroupscontexts,
+            'usergroups' => $usergroups,
+            'visiblegroupscontextsareas' => $visiblegroupscontextsareas,
+        ];
+        // Write cache file
+        $cachedobj = [
+            'created' => time(),
+            'contextinfo' => $contextinfo,
+        ];
+        file_put_contents($cachefile, json_encode($cachedobj));
+
+        // Return all the data.
+        return (object)$contextinfo;
     }
 
     /**
@@ -1091,7 +1125,6 @@ class manager {
             // Execute the actual query.
             $docs = $this->engine->execute_query($formdata, $contextinfo, $limit);
         }
-
         return $docs;
     }
 
