@@ -47,7 +47,7 @@ class engine extends \core_search\engine {
      *
      * @throws \core_search\engine_exception
      * @param  stdClass     $filters Containing query and filters.
-     * @param  array        $usercontexts Contexts where the user has access. True if the user can access all contexts.
+     * @param  stdClass     $usercontexts Contexts where the user has access. True if the user can access all contexts.
      * @param  int          $limit The maximum number of results to return.
      * @return \core_search\document[] Results or false if no results
      */
@@ -83,9 +83,9 @@ class engine extends \core_search\engine {
                     // Skip unused areas.
                     continue;
                 }
-                foreach ($areacontexts as $contextid) {
+                foreach (\array_keys($areacontexts) as $contextid) {
                     // Ensure they are unique.
-                    $allcontexts[$contextid] = $contextid;
+                    $allcontexts[$contextid] = true;
                 }
             }
             if (empty($allcontexts)) {
@@ -93,7 +93,7 @@ class engine extends \core_search\engine {
                 return array();
             }
 
-            list($contextsql, $contextparams) = $DB->get_in_or_equal($allcontexts);
+            list($contextsql, $contextparams) = $DB->get_in_or_equal(\array_keys($allcontexts));
             $ands[] = 'contextid ' . $contextsql;
             $params = array_merge($params, $contextparams);
         }
@@ -183,7 +183,7 @@ class engine extends \core_search\engine {
         // It is limited to $limit, no need to use recordsets.
         $documents = $DB->get_records_select('search_simpledb_index', implode(' AND ', $ands), $params, 'docid', '*', 0, $limit);
 
-        // Hopefully database cached results as this applies the same filters than above.
+        // Hopefully database cached results as this applies the same filters as above.
         $this->totalresults = $DB->count_records_select('search_simpledb_index', implode(' AND ', $ands), $params);
 
         $numgranted = 0;
