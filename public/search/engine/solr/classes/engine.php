@@ -325,7 +325,7 @@ class engine extends \core_search\engine {
                     // Skip unused areas.
                     continue;
                 }
-                foreach ($areacontexts as $contextid) {
+                foreach (\array_keys($areacontexts) as $contextid) {
                     // Ensure they are unique.
                     $allcontexts[$contextid] = $contextid;
                 }
@@ -350,7 +350,7 @@ class engine extends \core_search\engine {
             if ($accessinfo->visiblegroupscontextsareas) {
                 foreach ($accessinfo->visiblegroupscontextsareas as $contextid => $areaids) {
                     $exceptions .= ' OR (contextid:' . $contextid . ' AND areaid:(' .
-                            implode(' OR ', $areaids) . '))';
+                            implode(' OR ', \array_keys($areaids)) . '))';
                 }
             }
 
@@ -358,13 +358,13 @@ class engine extends \core_search\engine {
                 // Either the document has no groupid, or the groupid is one that the user
                 // belongs to, or the context is not one of the separate groups contexts.
                 $query->addFilterQuery('(*:* -groupid:[* TO *]) OR ' .
-                        'groupid:(' . implode(' OR ', $accessinfo->usergroups) . ') OR ' .
-                        '(*:* -contextid:(' . implode(' OR ', $accessinfo->separategroupscontexts) . '))' .
+                        'groupid:(' . implode(' OR ', \array_keys($accessinfo->usergroups)) . ') OR ' .
+                        '(*:* -contextid:(' . implode(' OR ', \array_keys($accessinfo->separategroupscontexts)) . '))' .
                         $exceptions);
             } else {
                 // Either the document has no groupid, or the context is not a restricted one.
                 $query->addFilterQuery('(*:* -groupid:[* TO *]) OR ' .
-                        '(*:* -contextid:(' . implode(' OR ', $accessinfo->separategroupscontexts) . '))' .
+                        '(*:* -contextid:(' . implode(' OR ', \array_keys($accessinfo->separategroupscontexts)) . '))' .
                         $exceptions);
             }
         }
