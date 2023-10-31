@@ -78,6 +78,17 @@ class testable_core_search extends \core_search\manager {
     }
 
     /**
+     * Get cache file for intermediate result of get_areas_user_accesses().
+     * @param $limitcourseids
+     * @param $limitcontextids
+     * @return string
+     */
+    public function get_areas_user_accesses_cache_file($limitcourseids = false, $limitcontextids = false): string
+    {
+        return parent::get_areas_user_accesses_cache_file($limitcourseids, $limitcontextids);
+    }
+
+    /**
      * Adds an enabled search component to the search areas list.
      *
      * @param string $areaid
