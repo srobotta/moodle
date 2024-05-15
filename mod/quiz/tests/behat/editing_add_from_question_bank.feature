@@ -54,6 +54,7 @@ Feature: Adding questions to a quiz from the question bank
       | name             | Feature question [count]  |
       | questiontext     | Write about topic [count] |
       | user             | teacher1                  |
+<<<<<<< HEAD
     # Sadly, the above step generates questions which sort like FQ1, FQ11, FQ12, ..., FQ19, FQ2, FQ20, ...
     # so the expected paging behaviour is not immediately intuitive with 20 questions per page.
     When I am on the "Quiz 1" "mod_quiz > Edit" page logged in as teacher1
@@ -62,10 +63,20 @@ Feature: Adding questions to a quiz from the question bank
     And I should see "question 01 name" in the "categoryquestions" "table"
     And I should see "question 02 name" in the "categoryquestions" "table"
     And I should not see "Feature question" in the "categoryquestions" "table"
+=======
+    When I am on the "Quiz 1" "mod_quiz > Edit" page logged in as teacher1
+    And I open the "last" add to quiz menu
+    And I follow "from question bank"
+    Then I should see "question 01 name" in the "categoryquestions" "table"
+    And I should see "question 02 name" in the "categoryquestions" "table"
+    And I should not see "Feature question 1" in the "categoryquestions" "table"
+    And I should not see "Feature question 2" in the "categoryquestions" "table"
+>>>>>>> 02718f4dab4 (MDL-79758 qbank: add filter in pagination links)
     And I set the field "Category" to "My collection"
     And I press "Apply filters"
     And I wait until the page is ready
     Then I should not see "question 01 name" in the "categoryquestions" "table"
+<<<<<<< HEAD
     And I should see "Feature question 1" in the "categoryquestions" "table"
     And I should see "Feature question 27" in the "categoryquestions" "table"
     And I should not see "Feature question 28" in the "categoryquestions" "table"
@@ -80,6 +91,20 @@ Feature: Adding questions to a quiz from the question bank
     And I should not see "Feature question 45" in the "categoryquestions" "table"
     And I should see "Feature question 5"
     And I should see "Feature question 9"
+=======
+    And I should not see "question 2 name" in the "categoryquestions" "table"
+    And I should see "Feature question 1" in the "categoryquestions" "table"
+    And I should see "Feature question 21" in the "categoryquestions" "table"
+    When I click on "2" "link" in the ".pagination" "css_element"
+    And I wait until the page is ready
+    Then I should not see "Feature question 21"
+    And I should see "Feature question 28"
+    When I click on "3" "link" in the ".pagination" "css_element"
+    And I wait until the page is ready
+    Then I should not see "Feature question 2"
+    Then I should not see "Feature question 28"
+    And I should see "Feature question 5"
+>>>>>>> 02718f4dab4 (MDL-79758 qbank: add filter in pagination links)
 
   Scenario: After closing and reopening the modal, it still works
     Given the following "question categories" exist:
