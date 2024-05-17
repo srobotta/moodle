@@ -146,7 +146,13 @@ class qtype_multianswer extends question_type {
             question_bank::get_qtype($wrapped->qtype)->get_question_options($wrapped);
             // For wrapped questions the maxgrade is always equal to the defaultmark,
             // there is no entry in the question_instances table for them.
-            $wrapped->category = $question->categoryobject->id;
+            if (isset($question->categoryobject)) {
+                $wrapped->category = $question->categoryobject->id;
+            } else if (isset($question->category)) {
+                $wrapped->category = $question->category;
+            } else {
+                $wrapped->category = 0;
+            }
             $question->options->questions[$sequence[$wrapped->id]] = $wrapped;
         }
         $question->hints = $DB->get_records('question_hints',
