@@ -60,6 +60,8 @@ class transfer_question_categories extends adhoc_task {
         require_once($CFG->dirroot . '/course/modlib.php');
         require_once($CFG->libdir . '/questionlib.php');
 
+        $this->fix_wrong_parents();
+
         $recordset = $DB->get_recordset('question_categories', ['parent' => 0]);
 
         foreach ($recordset as $oldtopcategory) {
@@ -173,6 +175,63 @@ class transfer_question_categories extends adhoc_task {
 
         // Move the parent from the old top category to the new one.
         $DB->set_field('question_categories', 'parent', $newtopcategory->id, ['parent' => $oldtopcategory->id]);
+    }
+
+    /**
+     * Fix wrong parents.
+     *
+     * In former course copies, sometimes a question category got the parent from the
+     * source course that was being copied.
+     * We resolve this here by finding categories that do not match the context of their
+     * parent, and changing the parent to one in the correct context.
+     * If there is no parent in the child's current context, its context is changed to match
+     * the current parent instead.
+     *
+     */
+    protected function fix_wrong_parents(): void {
+        global $DB;
+
+        $categoriestofix = $this->get_question_categories_diff_context();
+        $topcategorynewparent = [];
+        foreach ($categoriestofix as $cid => $childcontextid) {
+            if (!\array_key_exists($childcontextid, $topcategorynewparent)) {
+                $newparent = $DB->get_field(
+                    'question_categories',
+                    'id',
+                    ['contextid' => $childcontextid, 'parent' => 0]
+                );
+                $topcategorynewparent[$childcontextid] = $newparent;
+            } else {
+                $newparent = $topcategorynewparent[$childcontextid];
+            }
+            if (!empty($newparent)) {
+                $DB->update_record('question_categories', ['id' => $cid, 'parent' => $newparent]);
+                continue;
+            }
+            // We have no parent for the current context of the child category. Therefore, we have to
+            // change the context id to the same as it's current parent has.
+            $cat = $DB->get_record('question_categories', ['id' => $cid]);
+            $newcontext = $DB->get_field('question_categories', 'contextid', ['id' => $cat->parent]);
+            $DB->update_record('question_categories', ['id' => $cid, 'contextid' => $newcontext]);
+        }
+    }
+
+    /**
+     * Get all question categories where the context id of the parent differs from the context id of the child.
+     * Returns an array with key being the category id and value the childcontextid.
+     *
+     * @return array
+     */
+    protected function get_question_categories_diff_context(): array {
+        global $DB;
+
+        $sql = '
+                SELECT c.id AS cid, c.contextid AS childcontextid
+                  FROM {question_categories} c
+                  JOIN {question_categories} p ON p.id = c.parent
+                 WHERE p.contextid <> c.contextid
+        ';
+        return $DB->get_records_sql_menu($sql);
     }
 
     /**
