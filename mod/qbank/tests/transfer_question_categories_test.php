@@ -525,4 +525,77 @@ final class transfer_question_categories_test extends \advanced_testcase {
         $this->assertCount(2, $this->get_question_data([$usedunusedcats['Used Question Cat']->id]));
         $this->assertCount(2, $this->get_question_data([$usedunusedcats['Unused Question Cat']->id]));
     }
+
+    /**
+     * Assert that when parent <-> child hierarchy is broken (because of different contextid) it gets fixed.
+     *
+     * @return void
+     */
+    public function test_fix_wrong_parents(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->setup_pre_install_data();
+
+        // Create another course with course question category.
+        $course = self::getDataGenerator()->create_course();
+        $coursecontext = context_course::instance($course->id);
+        $courseparentcat = $this->create_question_category('New course parent cat', $coursecontext->id);
+        // Create a child category with different contextid.
+        $coursechildcat = $this->create_question_category('New course child cat', $this->coursecontext->id, $courseparentcat->id);
+        // Create two more child categories with a new context id that must not exist.
+        $courseotherchildcat = $this->create_question_category(
+            'New course other child cat',
+            $coursecontext->id + 1000,
+            $courseparentcat->id
+        );
+        // This yet another child category uses the same wrong context id.
+        $courseotherchildcat2 = $this->create_question_category(
+            'Yet other course child cat',
+            $coursecontext->id + 1000,
+            $courseparentcat->id
+        );
+
+        $task = new \ReflectionClass('\mod_qbank\task\transfer_question_categories');
+        $methodgetdiffcontext = $task->getMethod('get_question_categories_diff_context');
+        $methodgetdiffcontext->setAccessible(true);
+        $methodfixparents = $task->getMethod('fix_wrong_parents');
+        $methodfixparents->setAccessible(true);
+
+        // Find three categories with the "new context", the "New course parent cat" and the "top" category.
+        $this->assertCount(2, $DB->get_records('question_categories', ['contextid' => $coursecontext->id]));
+        $selectedchildcat = $DB->get_record('question_categories', ['id' => $coursechildcat->id]);
+        $this->assertEquals($courseparentcat->id, $selectedchildcat->parent);
+        $this->assertEquals($this->coursecontext->id, $selectedchildcat->contextid);
+        $selectedotherchildcat = $DB->get_record('question_categories', ['id' => $courseotherchildcat->id]);
+        $this->assertEquals($courseparentcat->id, $selectedotherchildcat->parent);
+        $this->assertNotEquals($this->coursecontext->id, $selectedotherchildcat->contextid);
+        $this->assertNotEquals($coursecontext->id, $selectedotherchildcat->contextid);
+        $selectedotherchildcat2 = $DB->get_record('question_categories', ['id' => $courseotherchildcat2->id]);
+        $this->assertEquals($courseparentcat->id, $selectedotherchildcat2->parent);
+        $this->assertNotEquals($this->coursecontext->id, $selectedotherchildcat2->contextid);
+        $this->assertNotEquals($coursecontext->id, $selectedotherchildcat2->contextid);
+
+        // There must be three missmatching categories, the "New course child cat" and "New course other child cat"
+        // and "Yet other course child cat".
+        $this->assertCount(3, $methodgetdiffcontext->invoke($task->newInstance()));
+
+        // Fix the wrong parent.
+        $methodfixparents->invoke($task->newInstance());
+        // No more mismatching categories.
+        $this->assertCount(0, $methodgetdiffcontext->invoke($task->newInstance()));
+        // For the child category, the parent has changed.
+        $topcatid = $DB->get_field('question_categories', 'id', ['contextid' => $this->coursecontext->id, 'parent' => 0]);
+        $newselectedchildcat = $DB->get_record('question_categories', ['id' => $coursechildcat->id]);
+        $this->assertEquals($topcatid, $newselectedchildcat->parent);
+        $this->assertEquals($this->coursecontext->id, $newselectedchildcat->contextid);
+        // For the other child category, the parent is the same but the contextid has changed.
+        $newselectedotherchildcat = $DB->get_record('question_categories', ['id' => $courseotherchildcat->id]);
+        $this->assertEquals($courseparentcat->id, $newselectedotherchildcat->parent);
+        $this->assertEquals($coursecontext->id, $newselectedotherchildcat->contextid);
+        // The same counts for the "Yet other course child cat".
+        $newselectedotherchildcat2 = $DB->get_record('question_categories', ['id' => $courseotherchildcat2->id]);
+        $this->assertEquals($courseparentcat->id, $newselectedotherchildcat2->parent);
+        $this->assertEquals($coursecontext->id, $newselectedotherchildcat2->contextid);
+    }
+
 }
