@@ -50,6 +50,11 @@ use stdClass;
 class transfer_question_categories extends adhoc_task {
 
     /**
+     * Do not automatically transfer these categories.
+     */
+    protected $excludecategories = [332393];
+
+    /**
      * Run the install task.
      *
      * @return void
@@ -63,12 +68,16 @@ class transfer_question_categories extends adhoc_task {
 
         $this->fix_wrong_parents();
 
-        $recordset = $DB->get_recordset('question_categories', ['parent' => 0]);
+        $recordset = $this->get_record_set();
         Debug::get_instance()->log('Start handling question categories.');
 
         foreach ($recordset as $oldtopcategory) {
 
             Debug::get_instance()->log('Start transfering old top category {1}', $oldtopcategory->id);
+            if (\in_array($oldtopcategory->id,  $this->excludecategories)) {
+                Debug::get_instance()->log('Skip this weird category {1}', $oldtopcategory->id);
+                continue;
+            }
 
             // There are cases where the contextid is 0, we cannot handle these categories automatically.
             if ($oldtopcategory->contextid == 0) {
@@ -158,6 +167,16 @@ class transfer_question_categories extends adhoc_task {
 
         $recordset->close();
         Debug::get_instance()->log('Finish handling question categories.');
+    }
+
+    /**
+     * Get the record set of top question categories.
+     *
+     * @return \dml_recordset
+     */
+    protected function get_record_set(): \moodle_recordset {
+        global $DB;
+        return $DB->get_recordset('question_categories', ['parent' => 0]);
     }
 
     /**
