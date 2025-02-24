@@ -652,6 +652,13 @@ class api {
                 $itemid = 0;
             } else {
                 $itemid = array_shift($parts);
+                if ($component === 'question') {
+                    $itemid = array_pop($parts); // In this case, the itemid is the last remaining element of the $parts array.
+                    $parts = []; // Remaining parts relate to question bank category and are not useful for finding the file.
+                }
+                else {
+                    $itemid = array_shift($parts);
+                }
             }
 
             if (empty($parts)) {
