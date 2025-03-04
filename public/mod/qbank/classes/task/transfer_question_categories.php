@@ -70,6 +70,10 @@ class transfer_question_categories extends adhoc_task {
 
         foreach ($recordset as $oldtopcategory) {
 
+            // There are cases where the contextid is 0, we cannot handle these categories automatically.
+            if ($oldtopcategory->contextid == 0) {
+                continue;
+            }
             if (!$oldcontext = context::instance_by_id($oldtopcategory->contextid, IGNORE_MISSING)) {
                 // That context does not exist anymore, we will treat these as if they were at site context level.
                 $oldcontext = context_system::instance();
