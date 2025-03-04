@@ -17,6 +17,7 @@
 namespace mod_qbank\task;
 
 use core\context;
+use core\log\Debug;
 use core\task\adhoc_task;
 
 /**
@@ -49,6 +50,7 @@ class transfer_questions extends adhoc_task {
 
         if (!$newcontextid) {
             mtrace("Could not find a category record for id {$data->categoryid}. Terminating task.");
+            Debug::get_instance()->log("Could not find a category record for id {$data->categoryid}. Terminating task.");
             return;
         }
 
@@ -63,6 +65,7 @@ class transfer_questions extends adhoc_task {
         $questions = $DB->get_records_sql_menu($sql, [$data->categoryid]);
         $questioncount = count($questions);
         mtrace("Moving files and tags for {$questioncount} questions in category {$data->categoryid}.");
+        Debug::get_instance()->log("Moving files and tags for {1} questions in category {2}.", $questioncount, $data->categoryid);
         $transaction = $DB->start_delegated_transaction();
         foreach ($questions as $questionid => $qtype) {
             \question_bank::get_qtype($qtype)->move_files($questionid, $data->contextid, $newcontext->id);
@@ -70,7 +73,9 @@ class transfer_questions extends adhoc_task {
             \question_bank::notify_question_edited($questionid);
         }
 
+        Debug::get_instance()->log("Start moving tags for {1} questions to new context {2}.", $questioncount, $newcontext);
         question_move_question_tags_to_new_context($questions, $newcontext);
+        Debug::get_instance()->log("Finished moving tags for {1} questions to new context {2}.", $questioncount, $newcontext);
         $transaction->allow_commit();
     }
 }

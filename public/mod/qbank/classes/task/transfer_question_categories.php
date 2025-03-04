@@ -18,6 +18,7 @@ namespace mod_qbank\task;
 
 use context_system;
 use core\context;
+use core\log\Debug;
 use core\task\adhoc_task;
 use core\task\manager;
 use core_course_category;
@@ -54,6 +55,16 @@ class transfer_question_categories extends adhoc_task {
      */
     private array $topcategorycache = [];
 
+    /**
+     * Do not automatically transfer these categories.
+     */
+    protected $excludecategories = [332393];
+
+    /**
+     * Run the install task.
+     *
+     * @return void
+     */
     #[\Override]
     public function execute(): void {
 
@@ -64,19 +75,29 @@ class transfer_question_categories extends adhoc_task {
 
         $this->fix_wrong_parents();
 
-        $recordset = $DB->get_recordset('question_categories', ['parent' => 0]);
+        $recordset = $this->get_record_set();
+        Debug::get_instance()->log('Start handling question categories.');
 
         $movedcategorycontexts = [];
 
         foreach ($recordset as $oldtopcategory) {
 
-            // There are cases where the contextid is 0, we cannot handle these categories automatically.
-            if ($oldtopcategory->contextid == 0) {
+            Debug::get_instance()->log('Start transfering old top category {1}', $oldtopcategory->id);
+            if (\in_array($oldtopcategory->id,  $this->excludecategories)) {
+                Debug::get_instance()->log('Skip this weird category {1}', $oldtopcategory->id);
                 continue;
             }
+
+            // There are cases where the contextid is 0, we cannot handle these categories automatically.
+            if ($oldtopcategory->contextid == 0) {
+                Debug::get_instance()->log('Category {1} has no contextid, skip it.', $oldtopcategory->id);
+                continue;
+            }
+
             if (!$oldcontext = context::instance_by_id($oldtopcategory->contextid, IGNORE_MISSING)) {
                 // That context does not exist anymore, we will treat these as if they were at site context level.
                 $oldcontext = context_system::instance();
+                Debug::get_instance()->log('Category {1} has old contextid {2}, use system context.', $oldtopcategory->id, $oldtopcategory->contextid);
             }
 
             $trans = $DB->start_delegated_transaction();
@@ -130,22 +151,31 @@ class transfer_question_categories extends adhoc_task {
                 default:
                     // This shouldn't be possible, so we can't really transfer it.
                     // We should commit any pre-transfer category cleanup though.
+                    Debug::get_instance()->log('Warning, we are not able to handle context level {1}, Cleanup.', $oldcontext->contextlevel);
                     $trans->allow_commit();
                     continue 2;
             }
 
             if (!$newmod = question_bank_helper::get_default_open_instance_system_type($course)) {
                 $newmod = question_bank_helper::create_default_open_instance($course, $bankname, question_bank_helper::TYPE_SYSTEM);
+                Debug::get_instance()->log('Created qbank {1} in course {2}', $bankname, $course->id);
             }
 
             // We have our new mod instance, now move all the subcategories of the old 'top' category to this new context.
+            Debug::get_instance()->log('Start moving all subcategories of {1} to context {2}.', $oldtopcategory->id, $newmod->context);
             $movedcategories = $this->move_question_category($oldtopcategory, $newmod->context);
+            Debug::get_instance()->log('Finished moving all subcategories {3} of {1} to context {2}.',
+                $oldtopcategory->id, $newmod->context, $movedcategories);
 
             $movedcategorycontexts += array_fill_keys($movedcategories, $oldtopcategory->contextid);
 
             // Job done, lets delete the old 'top' category.
+            Debug::get_instance()->log('Start deleting old top category {1}.', $oldtopcategory->id);
             $DB->delete_records('question_categories', ['id' => $oldtopcategory->id]);
+            Debug::get_instance()->log('Finish deleting old top category {1}.', $oldtopcategory->id);
+            Debug::get_instance()->log('Commit all db changes for old top category {1}.', $oldtopcategory->id);
             $trans->allow_commit();
+            Debug::get_instance()->log('Done commit for changes on old top category {1}.', $oldtopcategory->id);
         }
 
         $recordset->close();
@@ -155,6 +185,7 @@ class transfer_question_categories extends adhoc_task {
             $task = new transfer_questions();
             $task->set_custom_data(['categoryid' => $categoryid, 'contextid' => $oldcontextid]);
             manager::queue_adhoc_task($task);
+            Debug::get_instance()->log('Queued task transfer questions from category {1} from context {2}', $categoryid, $oldcontextid);
         }
     }
 
@@ -175,43 +206,15 @@ class transfer_question_categories extends adhoc_task {
         return create_course($data);
     }
 
-    /**
-     * Fix wrong parents.
-     *
-     * In former course copies, sometimes a question category got the parent from the
-     * source course that was being copied.
-     * We resolve this here by finding categories that do not match the context of their
-     * parent, and changing the parent to one in the correct context.
-     * If there is no parent in the child's current context, its context is changed to match
-     * the current parent instead.
-     *
-     */
-    protected function fix_wrong_parents(): void {
-        global $DB;
 
-        $categoriestofix = $this->get_question_categories_diff_context();
-        $topcategorynewparent = [];
-        foreach ($categoriestofix as $cid => $childcontextid) {
-            if (!array_key_exists($childcontextid, $topcategorynewparent)) {
-                $newparent = $DB->get_field(
-                    'question_categories',
-                    'id',
-                    ['contextid' => $childcontextid, 'parent' => 0]
-                );
-                $topcategorynewparent[$childcontextid] = $newparent;
-            } else {
-                $newparent = $topcategorynewparent[$childcontextid];
-            }
-            if (!empty($newparent)) {
-                $DB->update_record('question_categories', ['id' => $cid, 'parent' => $newparent]);
-                continue;
-            }
-            // We have no parent for the current context of the child category. Therefore, we have to
-            // change the context id to the same as it's current parent has.
-            $cat = $DB->get_record('question_categories', ['id' => $cid]);
-            $newcontext = $DB->get_field('question_categories', 'contextid', ['id' => $cat->parent]);
-            $DB->update_record('question_categories', ['id' => $cid, 'contextid' => $newcontext]);
-        }
+    /**
+     * Get the record set of top question categories.
+     *
+     * @return \dml_recordset
+     */
+    protected function get_record_set(): \moodle_recordset {
+        global $DB;
+        return $DB->get_recordset('question_categories', ['parent' => 0]);
     }
 
     /**
