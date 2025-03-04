@@ -147,8 +147,6 @@ class transfer_question_categories extends adhoc_task {
         $recordset->close();
 
         // Create a set of new tasks to update the questions in each category to the new contexts.
-        // The category itself is already in the new context. We record the old context so we know where to move
-        // files and tags from.
         foreach ($movedcategorycontexts as $categoryid => $oldcontextid) {
             $task = new transfer_questions();
             $task->set_custom_data(['categoryid' => $categoryid, 'contextid' => $oldcontextid]);
@@ -177,10 +175,10 @@ class transfer_question_categories extends adhoc_task {
      * Create a new 'Top' category in our new context and move the old categories descendents beneath it.
      *
      * @param stdClass $oldtopcategory The old 'Top' category that we are moving.
-     * @param context\module $newcontext The context we are moving our category to.
-     * @return int[] The IDs of all categories moved to the new context.
+     * @param \context $newcontext The context we are moving our category to.
+     * @return int[] The IDs of all categories moved to the new context.s
      */
-    protected function move_question_category(stdClass $oldtopcategory, context\module $newcontext): array {
+    protected function move_question_category(stdClass $oldtopcategory, \context $newcontext): array {
         global $DB;
 
         $newtopcategory = question_get_top_category($newcontext->id, true);
@@ -188,7 +186,7 @@ class transfer_question_categories extends adhoc_task {
         move_question_set_references($oldtopcategory->id, $newtopcategory->id, $oldtopcategory->contextid, $newcontext->id, true);
 
         // This function moves subcategories, so we have to start at the top.
-        $movedcategories = $this->move_subcategories_to_context($oldtopcategory->id, $newcontext);
+        $movedcategories = $this->move_subcategories_to_context($oldtopcategory->id, $oldtopcategory->contextid, $newcontext->id);
 
         // Move the parent from the old top category to the new one.
         $DB->set_field('question_categories', 'parent', $newtopcategory->id, ['parent' => $oldtopcategory->id]);
@@ -197,23 +195,25 @@ class transfer_question_categories extends adhoc_task {
     }
 
     /**
-     * Recursively update the contextid for all subcategories of the given category.
-     *
-     * @param int $categoryid The ID of the category to update subcategories for. When calling directly,
-     *                        this should be a top category.
-     * @param context\module $newcontext The new context for the subcategories.
-     * @return int[] The IDs of all categories moved to the new context.
+     * @param int $categoryid
+     * @param $oldcontextid
+     * @param $newcontextid
+     * @return array
      */
-    protected function move_subcategories_to_context(int $categoryid, context\module $newcontext): array {
+    protected function move_subcategories_to_context(int $categoryid, $oldcontextid, $newcontextid): array {
         global $DB;
         $movedcategories = [];
+        $newcontext = context::instance_by_id($newcontextid);
+        if ($newcontext->contextlevel !== CONTEXT_MODULE) {
+            debugging("Invalid contextlevel: {$newcontext->contextlevel}, must use CONTEXT_MODULE", DEBUG_DEVELOPER);
+        }
 
         $subcatids = $DB->get_fieldset('question_categories', 'id', ['parent' => $categoryid]);
         foreach ($subcatids as $subcatid) {
-            $DB->set_field('question_categories', 'contextid', $newcontext->id, ['id' => $subcatid]);
+            $DB->set_field('question_categories', 'contextid', $newcontextid, ['id' => $subcatid]);
             $movedcategories[] = $subcatid;
             $movedcategories = array_merge(
-                $this->move_subcategories_to_context($subcatid, $newcontext),
+                $this->move_subcategories_to_context($subcatid, $oldcontextid, $newcontextid),
                 $movedcategories,
             );
         }

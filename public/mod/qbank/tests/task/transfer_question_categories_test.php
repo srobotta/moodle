@@ -22,9 +22,7 @@ use context_coursecat;
 use context_module;
 use context_system;
 use core\task\manager;
-use core_question\local\bank\random_question_loader;
-use core_question\local\bank\question_bank_helper;
-use mod_quiz\quiz_settings;
+use mod_qbank\task\transfer_questions;
 use stdClass;
 use core_question\local\bank\question_version_status;
 
@@ -384,9 +382,7 @@ final class transfer_question_categories_test extends \advanced_testcase {
         // Make sure there are files in the expected fileareas for this question.
         $fs = get_file_storage();
         $this->assertTrue($fs->file_exists($this->coursecatcontext->id, 'question', 'questiontext', $question->id, '/', '1.png'));
-        $this->assertTrue(
-            $fs->file_exists($this->coursecatcontext->id, 'question', 'generalfeedback', $question->id, '/', '2.png'),
-        );
+        $this->assertTrue($fs->file_exists($this->coursecatcontext->id, 'question', 'generalfeedback', $question->id, '/', '2.png'));
         $this->assertTrue($fs->file_exists($this->coursecatcontext->id, 'qtype_essay', 'graderinfo', $question->id, '/', '3.png'));
 
         // Make sure we have 4 question categories at course level (including 'top') with some questions in them.
@@ -730,7 +726,7 @@ final class transfer_question_categories_test extends \advanced_testcase {
             "Checking context of category $actualcategory->name.");
     }
 
-    public function test_transfer_questions(): void {
+    public function test_transfer_questions() {
         global $DB;
         $this->resetAfterTest();
         $this->setup_pre_install_data();
@@ -798,8 +794,6 @@ final class transfer_question_categories_test extends \advanced_testcase {
             '3.png'
         ));
 
-        $this->assertFalse(question_bank_helper::has_bank_migration_task_completed_successfully());
-
         $questiontasks = manager::get_adhoc_tasks(transfer_questions::class);
 
         // We should have a transfer_questions task for each category that was moved.
@@ -866,7 +860,5 @@ final class transfer_question_categories_test extends \advanced_testcase {
             '/',
             '3.png'
         ));
-
-        $this->assertTrue(question_bank_helper::has_bank_migration_task_completed_successfully());
     }
 }

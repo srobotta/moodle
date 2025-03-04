@@ -55,19 +55,19 @@ class transfer_questions extends adhoc_task {
         $newcontext = context::instance_by_id($newcontextid);
 
         $sql = "SELECT q.id, q.qtype
-                  FROM {question} q
-                  JOIN {question_versions} qv ON qv.questionid = q.id
-                  JOIN {question_bank_entries} qbe ON qbe.id = qv.questionbankentryid
-                 WHERE qbe.questioncategoryid = ?";
+              FROM {question} q
+              JOIN {question_versions} qv ON qv.questionid = q.id
+              JOIN {question_bank_entries} qbe ON qbe.id = qv.questionbankentryid
+             WHERE qbe.questioncategoryid = ?";
 
-        $questions = $DB->get_records_sql($sql, [$data->categoryid]);
+        $questions = $DB->get_records_sql_menu($sql, [$data->categoryid]);
         $questioncount = count($questions);
         mtrace("Moving files and tags for {$questioncount} questions in category {$data->categoryid}.");
         $transaction = $DB->start_delegated_transaction();
-        foreach ($questions as $question) {
-            \question_bank::get_qtype($question->qtype, false)->move_files($question->id, $data->contextid, $newcontext->id);
+        foreach ($questions as $questionid => $qtype) {
+            \question_bank::get_qtype($qtype)->move_files($questionid, $data->contextid, $newcontext->id);
             // Purge this question from the cache.
-            \question_bank::notify_question_edited($question->id);
+            \question_bank::notify_question_edited($questionid);
         }
 
         question_move_question_tags_to_new_context($questions, $newcontext);
