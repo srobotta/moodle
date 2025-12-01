@@ -5480,12 +5480,18 @@ class restore_create_categories_and_questions extends restore_structure_step {
             }
             $tagcontextid = $this->cachedcategory->contextid;
             // Add the tag to the question.
-            core_tag_tag::add_item_tag('core_question',
+            $taginstanceid = core_tag_tag::add_item_tag(
+                'core_question',
                 'question',
                 $newquestion,
                 context::instance_by_id($tagcontextid),
-                $tagname
+                $tagname,
             );
+            $tagid = $DB->get_field('tag_instance', 'tagid', ['id' => $taginstanceid]);
+            if ($tagid != $data->id) {
+                // The tag didn't exist already, map the new ID.
+                $this->set_mapping('tag', $data->id, $tagid);
+            }
         }
     }
 
@@ -6503,49 +6509,40 @@ trait restore_question_set_reference_data_trait {
     public function process_question_set_reference($data) {
         global $DB;
         $data = (object) $data;
-        $owncontext = $data->usingcontextid == $data->questionscontextid;
         $data->usingcontextid = $this->get_mappingid('context', $data->usingcontextid);
         $data->itemid = $this->get_new_parentid('quiz_question_instance');
+
+        if ($context = $this->get_mappingid('context', $data->questionscontextid)) {
+            $data->questionscontextid = $context;
+        } else {
+            $this->log(
+                "question_set_reference with old id {$data->id} referenced question context "
+                . "{$data->questionscontextid} which was not included in the backup. Therefore, this has been "
+                . "restored with the old questionscontextid.",
+                backup::LOG_WARNING,
+            );
+        }
+
         $filtercondition = json_decode($data->filtercondition, true);
 
         if (!isset($filtercondition['filter'])) {
             // Pre-4.3, convert the old filtercondition format to the new format.
+            // Don't map tags to new IDs, the plugin will do that below.
             $filtercondition = \core_question\question_reference_manager::convert_legacy_set_reference_filter_condition(
-                    $filtercondition);
+                $filtercondition,
+                false,
+            );
         }
 
-        // Map category id used for category filter condition and corresponding context id.
-        $oldcategoryid = $filtercondition['filter']['category']['values'][0];
-        // Decide if we're going to refer back to the original category, or to the new category.
-        // Are we restoring to a different site?
-        // Has the original context or category been deleted?
-        // Did the old category belong to the same context as the original set reference?
-        // Are we allowed to use its questions?
-        $questionscontext = context::instance_by_id($data->questionscontextid, IGNORE_MISSING);
-        if (
-            !$this->get_task()->is_samesite()
-            || !$questionscontext
-            || !$DB->record_exists('question_categories', ['id' => $oldcategoryid])
-            || $owncontext
-            || !has_capability('moodle/question:useall', $questionscontext)
-        ) {
-            $newcategoryid = $this->get_mappingid('question_category', $oldcategoryid);
-            $filtercondition['filter']['category']['values'][0] = $newcategoryid;
+        $qbankfeatureclasses = \core\component::get_plugin_list_with_class('qbank', 'plugin_feature');
 
-            if ($context = $this->get_mappingid('context', $data->questionscontextid)) {
-                $data->questionscontextid = $context;
-            } else {
-                $this->log('question_set_reference with old id ' . $data->id .
-                    ' referenced question context ' . $data->questionscontextid .
-                    ' which was not included in the backup. Therefore, this has been ' .
-                    ' restored with the old questionscontextid.', backup::LOG_WARNING);
+        foreach ($qbankfeatureclasses as $qbankfeatureclass) {
+            $qbankfeature = new $qbankfeatureclass();
+            $filters = $qbankfeature->get_question_filters();
+            foreach ($filters as $filter) {
+                $filtercondition = $filter->restore_filtercondition($filtercondition, $data, $this);
             }
         }
-
-        $filtercondition['cat'] = implode(',', [
-            $filtercondition['filter']['category']['values'][0],
-            $data->questionscontextid,
-        ]);
 
         $data->filtercondition = json_encode($filtercondition);
 
