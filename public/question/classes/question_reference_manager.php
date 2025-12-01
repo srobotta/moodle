@@ -83,9 +83,11 @@ class question_reference_manager {
      * pre-4.3 filter condition structure to the new one.
      *
      * @param array $filtercondition Pre-4.3 filter condition.
+     * @param bool $maptags Map tags to tags with the same name, creating them if necessary. If not, just convert existing IDs to
+     *     the new structure.
      * @return array Post-4.3 filter condition.
      */
-    public static function convert_legacy_set_reference_filter_condition(array $filtercondition): array {
+    public static function convert_legacy_set_reference_filter_condition(array $filtercondition, bool $maptags = true): array {
         global $DB;
         if (!isset($filtercondition['filter'])) {
             $filtercondition['filter'] = [];
@@ -103,10 +105,14 @@ class question_reference_manager {
             if (isset($filtercondition['tags'])) {
                 // Get the names of the tags in the condition. Find or create corresponding tags,
                 // and set their ids in the new condition.
-                $oldtags = array_map(fn($oldtag) => explode(',', $oldtag)[1], $filtercondition['tags']);
-                $questiontagcollid = \core_tag_area::get_collection('core_question', 'question');
-                $newtags = \core_tag_tag::create_if_missing($questiontagcollid, $oldtags);
-                $newtagids = array_map(fn($newtag) => $newtag->id, $newtags);
+                if ($maptags) {
+                    $oldtags = array_map(fn($oldtag) => explode(',', $oldtag)[1], $filtercondition['tags']);
+                    $questiontagcollid = \core_tag_area::get_collection('core_question', 'question');
+                    $newtags = \core_tag_tag::create_if_missing($questiontagcollid, $oldtags);
+                    $newtagids = array_map(fn($newtag) => $newtag->id, $newtags);
+                } else {
+                    $newtagids = array_map(fn($oldtag) => explode(',', $oldtag)[0], $filtercondition['tags']);
+                }
 
                 $filtercondition['filter']['qtagids'] = [
                     'jointype' => \qbank_tagquestion\tag_condition::JOINTYPE_DEFAULT,
