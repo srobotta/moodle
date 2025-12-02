@@ -5688,13 +5688,19 @@ class restore_move_module_questions_categories extends restore_execution_step {
                 // We need to check all the question_set_references belonging to this context_module.
                 $references = $DB->get_records('question_set_references', ['usingcontextid' => $newcontext->newitemid]);
                 foreach ($references as $reference) {
-                    $filtercondition = json_decode($reference->filtercondition);
-                    if (!empty($filtercondition->questioncategoryid) &&
-                            in_array($filtercondition->questioncategoryid, $categoryids)) {
-                        // This is one of ours, update the questionscontextid.
-                        $DB->set_field('question_set_references',
-                            'questionscontextid', $newcontext->newitemid,
-                            ['id' => $reference->id]);
+                    $filtercondition = json_decode($reference->filtercondition, true);
+                    if (!array_key_exists('filter', $filtercondition)) {
+                        $filtercondition = \core_question\question_reference_manager::convert_legacy_set_reference_filter_condition(
+                            $filtercondition,
+                        );
+                    }
+                    $questioncategoryid = $filtercondition['filter']['category']['values'][0];
+                    if (in_array($questioncategoryid, $categoryids)) {
+                        // This is one of ours, update the questionscontextid and filtercondition fields.
+                        $reference->questionscontextid = $newcontext->newitemid;
+                        $filtercondition['cat'] = "{$questioncategoryid},{$newcontext->newitemid}";
+                        $reference->filtercondition = json_encode($filtercondition);
+                        $DB->update_record('question_set_references', $reference);
                     }
                 }
             }
