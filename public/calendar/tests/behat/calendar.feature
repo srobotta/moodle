@@ -159,6 +159,7 @@ Feature: Perform basic calendar functionality
   Scenario: Edit a newly created event using TinyMCE editor
     Given I log in as "teacher1"
     And I follow "Dashboard"
+    And I click on "Full calendar" "link"
     And I click on "New event" "button"
     And I set the field "Event title" to "Newly created event"
     When I press "Save"
