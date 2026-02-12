@@ -100,8 +100,10 @@ class util {
     /**
      * Throw a specialized HTTP exception based on the response status code.
      *
-     * @param \Psr\Http\Message\ServerRequestInterface $request
-     * @param \Psr\Http\Message\ResponseInterface $response
+     * @param ServerRequestInterface $request
+     * @param ResponseInterface $response
+     * @param string|null $message
+     * @param \Throwable|null $previous
      */
     public static function throw_specialized_exception(
         ServerRequestInterface $request,
