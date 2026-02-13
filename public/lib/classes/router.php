@@ -210,8 +210,8 @@ class router {
             $this->app->getCallableResolver(),
             $this->app->getResponseFactory(),
             displayErrorDetails: $displayerrordetails,
-            logErrors: true,
-            logErrorDetails: true,
+            logErrors: false,
+            logErrorDetails: false,
         );
 
         // Set a custom error handler for the HttpNotFoundException and HttpForbiddenException.
