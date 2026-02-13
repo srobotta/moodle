@@ -196,10 +196,15 @@ Feature: Display availability for activities and sections
     And I am on the "C1" "Course" page logged in as "teacher1"
     And I turn editing mode on
     And I add the "Navigation" block if not present
-    # Add a restriction to section 1 (visible to students).
+    # Add a couple of restrictions to section 1 (visible to students).
     And I edit the section "1"
     And I set the following fields to these values:
       | Access restrictions | Grouping: GX1 |
+    And I expand all fieldsets
+    And I press "Add restriction..."
+    And I click on "Date" "button" in the "Add restriction..." "dialogue"
+    And I set the field "direction" to "until"
+    And I set the field "x[year]" to "2020"
     And I press "Save changes"
     # Change to student view.
     And I am on the "Course 1" "Course" page logged in as "student1"
@@ -207,7 +212,9 @@ Feature: Display availability for activities and sections
     When I click on "Section 1" "link" in the "Navigation" "block"
     # Section 1 should be visible and show info.
     And I should see "Section 1" in the "page-header" "region"
-    And I should see "Not available unless" in the "region-main" "region"
+    And I should see "It is before end of" in the "region-main" "region"
+    And I should not see "Show more" in the "region-main" "region"
+    And I should not see "Show less" in the "region-main" "region"
     And "Page 1" "link" should not exist in the "region-main" "region"
     # Check the logs.
     And I am on the "C1" "Course" page logged in as "teacher1"
@@ -234,9 +241,14 @@ Feature: Display availability for activities and sections
       | name | course | idnumber |
       | GX1  | C1     | GXI1     |
     And I am on the "Glossary 1" "glossary activity editing" page logged in as "teacher1"
-    # Add a restriction to Glossary 1 (visible to students).
+    # Add a couple of restrictions to Glossary 1 (visible to students).
     And I set the following fields to these values:
       | Access restrictions | Grouping: GX1 |
+    And I expand all fieldsets
+    And I press "Add restriction..."
+    And I click on "Date" "button" in the "Add restriction..." "dialogue"
+    And I set the field "direction" to "until"
+    And I set the field "x[year]" to "2020"
     And I press "Save and return to course"
     And I turn editing mode on
     And I add the "Navigation" block if not present
@@ -247,7 +259,9 @@ Feature: Display availability for activities and sections
     When I click on "Glossary 1" "link" in the "Navigation" "block"
     # Glossary 1 should be visible and show info.
     Then I should see "Glossary 1" in the "page-header" "region"
-    And I should see "Not available unless" in the "region-main" "region"
+    And I should see "It is before end of" in the "region-main" "region"
+    And I should not see "Show more" in the "region-main" "region"
+    And I should not see "Show less" in the "region-main" "region"
     And "Add a new entry" "link" should not exist
     # Check the logs.
     And I am on the "C1" "Course" page logged in as "teacher1"

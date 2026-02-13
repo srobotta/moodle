@@ -63,6 +63,8 @@ class restricted_section {
         $context = \context_course::instance($course->id);
         $format = course_get_format($course->id);
         $format->set_sectionid($section->id);
+        // We always want to show the restrictions expanded in the restricted section page.
+        $format->set_show_restrictions_expanded(true);
         $outputclass = $format->get_output_classname('content');
         $sectionoutput = new $outputclass($format);
         $PAGE->set_url('/course/section.php', ['id' => $section->id]);
