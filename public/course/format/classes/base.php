@@ -81,6 +81,8 @@ abstract class base {
     protected $singlesection = null;
     /** @var int|null the sectionid when a single section is selected, null when multiple sections are displayed. */
     protected $singlesectionid = null;
+    /** @var bool Whether restrictions should be expanded. */
+    protected $showrestrictionsexpanded = false;
     /** @var course_modinfo the current course modinfo, please use course_format::get_modinfo() */
     private $modinfo = null;
     /** @var array cached instances */
@@ -662,6 +664,24 @@ abstract class base {
      */
     public function get_sectionid(): ?int {
         return $this->singlesectionid;
+    }
+
+    /**
+     * Set whether restrictions should be expanded.
+     *
+     * @param bool $expanded True if restrictions should be expanded, false otherwise.
+     */
+    public function set_show_restrictions_expanded(bool $expanded): void {
+        $this->showrestrictionsexpanded = $expanded;
+    }
+
+    /**
+     * Get whether restrictions should be expanded.
+     *
+     * @return bool True if restrictions should be expanded, false otherwise.
+     */
+    public function get_show_restrictions_expanded(): bool {
+        return $this->showrestrictionsexpanded;
     }
 
     /**
