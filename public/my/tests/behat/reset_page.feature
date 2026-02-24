@@ -26,4 +26,6 @@ Feature: Reset dashboard page to default
     And "Course overview" "block" should exist
     And "Timeline" "block" should exist
     And "Calendar" "block" should exist
+    # The calendar block is on the side.
+    And "Calendar" "block" should not exist in the "region-main" "region"
     And I should not see "Reset page to default"
