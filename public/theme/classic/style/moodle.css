@@ -35518,6 +35518,10 @@ select {
   vertical-align: top;
 }
 
+.path-mod-choice .responseaction select.singleselect {
+  display: inline-block;
+}
+
 .path-mod-forum .forumsearch input,
 .path-mod-forum .forumsearch .helptooltip {
   margin: 0 3px;
