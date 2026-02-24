@@ -2228,7 +2228,7 @@ function glossary_print_dynaentry($courseid, $entries, $displayformat = -1) {
             if (file_exists($formatfile)) {
                 include_once($formatfile);
                 if (function_exists($functionname)) {
-                    $functionname($course, $cm, $glossary, $entry,'','','','');
+                    $functionname($course, $cm, $glossary, $entry, '', '', 1, '');
                 }
             }
         }
