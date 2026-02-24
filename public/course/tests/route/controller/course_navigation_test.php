@@ -83,28 +83,53 @@ final class course_navigation_test extends route_testcase {
                 'id' => 'cm2',
             ],
         ];
-        yield 'Simple case with hidden module (student)' => [
+        yield 'Hidden module (teacher)' => [
             'cmsdef' => [
                 ['name' => 'cm1'],
                 ['name' => 'cm2', 'options' => ['visible' => false]],
+                ['name' => 'cm3'],
             ],
             'current' => 'cm1',
             'expected' => [
-                'id' => 'cm2',
-            ],
-        ];
-        yield 'Simple case with hidden module (teacher)' => [
-            'cmsdef' => [
-                ['name' => 'cm1'],
-                ['name' => 'cm2', 'options' => ['visible' => false]],
-            ],
-            'current' => 'cm1',
-            'expected' => [
-                'id' => 'cm2',
+                'id' => 'cm2', // Teachers can see hidden modules.
             ],
             'role' => 'teacher',
         ];
-        yield 'Simple case last activity of a course (student)' => [
+        yield 'Hidden module (student)' => [
+            'cmsdef' => [
+                ['name' => 'cm1'],
+                ['name' => 'cm2', 'options' => ['visible' => false]],
+                ['name' => 'cm3'],
+            ],
+            'current' => 'cm1',
+            'expected' => [
+                'id' => 'cm3', // Students cannot see hidden modules.
+            ],
+        ];
+        yield 'Stealth module (editingteacher)' => [
+            'cmsdef' => [
+                ['name' => 'cm1'],
+                ['name' => 'cm2', 'options' => ['visibleoncoursepage' => false]],
+                ['name' => 'cm3'],
+            ],
+            'current' => 'cm1',
+            'expected' => [
+                'id' => 'cm2', // Teachers can see stealth modules in the course page.
+            ],
+            'role' => 'editingteacher',
+        ];
+        yield 'Stealth module (student)' => [
+            'cmsdef' => [
+                ['name' => 'cm1'],
+                ['name' => 'cm2', 'options' => ['visibleoncoursepage' => false]],
+                ['name' => 'cm3'],
+            ],
+            'current' => 'cm1',
+            'expected' => [
+                'id' => 'cm3', // Students cannot see stealth modules in the course page.
+            ],
+        ];
+        yield 'Last activity of a course (student)' => [
             'cmsdef' => [
                 ['name' => 'cm1'],
                 ['name' => 'cm2', 'options' => ['visible' => false]],
@@ -213,28 +238,53 @@ final class course_navigation_test extends route_testcase {
                 'id' => 'cm1',
             ],
         ];
-        yield 'Simple case with hidden module (student)' => [
+        yield 'Hidden module (teacher)' => [
             'cmsdef' => [
-                ['name' => 'cm1', 'options' => ['visible' => false]],
-                ['name' => 'cm2'],
+                ['name' => 'cm1'],
+                ['name' => 'cm2', 'options' => ['visible' => false]],
+                ['name' => 'cm3'],
             ],
-            'current' => 'cm2',
+            'current' => 'cm3',
             'expected' => [
-                'id' => 'cm1',
-            ],
-        ];
-        yield 'Simple case with hidden module (teacher)' => [
-            'cmsdef' => [
-                ['name' => 'cm1', 'options' => ['visible' => false]],
-                ['name' => 'cm2'],
-            ],
-            'current' => 'cm2',
-            'expected' => [
-                'id' => 'cm1',
+                'id' => 'cm2', // Teachers can see hidden modules.
             ],
             'role' => 'teacher',
         ];
-        yield 'Simple case first activity of a course (student)' => [
+        yield 'Hidden module (student)' => [
+            'cmsdef' => [
+                ['name' => 'cm1'],
+                ['name' => 'cm2', 'options' => ['visible' => false]],
+                ['name' => 'cm3'],
+            ],
+            'current' => 'cm3',
+            'expected' => [
+                'id' => 'cm1', // Students cannot see hidden modules.
+            ],
+        ];
+        yield 'Stealth module (teacher)' => [
+            'cmsdef' => [
+                ['name' => 'cm1'],
+                ['name' => 'cm2', 'options' => ['visibleoncoursepage' => false]],
+                ['name' => 'cm3'],
+            ],
+            'current' => 'cm3',
+            'expected' => [
+                'id' => 'cm2', // Teachers can see stealth modules in the course page.
+            ],
+            'role' => 'teacher',
+        ];
+        yield 'Stealth module (student)' => [
+            'cmsdef' => [
+                ['name' => 'cm1'],
+                ['name' => 'cm2', 'options' => ['visibleoncoursepage' => false]],
+                ['name' => 'cm3'],
+            ],
+            'current' => 'cm3',
+            'expected' => [
+                'id' => 'cm1', // Students cannot see stealth modules in the course page.
+            ],
+        ];
+        yield 'First activity of a course (student)' => [
             'cmsdef' => [
                 ['name' => 'cm1'],
                 ['name' => 'cm2'],
@@ -309,6 +359,8 @@ final class course_navigation_test extends route_testcase {
         string $direction = 'next',
     ): void {
         $this->resetAfterTest();
+        set_config('allowstealth', 1);
+
         $generator = $this->getDataGenerator();
         $course = $generator->create_course(['numsections' => 2]);
         $user = $generator->create_and_enrol($course, $role);
