@@ -140,8 +140,11 @@ class course_navigation {
      * @return bool True if the course module is valid, false otherwise.
      */
     private function is_valid_cm(cm_info $cm): bool {
-        // Skip modules that don't have a URL (like labels).
-        return !empty($cm->get_url());
+        return
+            // Skip modules that don't have a URL (like labels).
+            !empty($cm->get_url())
+            // Skip modules that are not visible to the user.
+            && $cm->is_visible_on_course_page();
     }
 
     /**
