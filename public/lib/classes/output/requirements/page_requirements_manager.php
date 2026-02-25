@@ -877,6 +877,8 @@ class page_requirements_manager {
                             ['maxareabytesreached', 'moodle'], ['serverconnection', 'error'],
                             ['changesmadereallygoaway', 'moodle'], ['complete', 'moodle'],
                             ['invalidfiletypetitle', 'repository'],
+                            ['upload_error_folders_not_supported', 'repository_upload'],
+                            ['upload_error_folders_not_supported_title', 'repository_upload'],
                         ],
                     ];
                     break;
