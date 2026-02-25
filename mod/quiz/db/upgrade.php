@@ -135,7 +135,7 @@ function xmldb_quiz_upgrade($oldversion) {
 
     // Automatically generated Moodle v5.0.0 release upgrade line.
     // Put any upgrade step following this.
-    if ($oldversion < 2026011600) {
+    if ($oldversion < 2025041401) {
         // Queue tasks to process stuck quiz attempts (state = 'submitted').
         $attemptids = $DB->get_fieldset_select(
             'quiz_attempts',
@@ -150,7 +150,7 @@ function xmldb_quiz_upgrade($oldversion) {
         }
 
         // Quiz savepoint reached.
-        upgrade_mod_savepoint(true, 2026011600, 'quiz');
+        upgrade_mod_savepoint(true, 2025041401, 'quiz');
     }
 
     return true;
