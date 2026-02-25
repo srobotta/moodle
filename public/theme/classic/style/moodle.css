@@ -30641,7 +30641,7 @@ table.calendartable caption {
 body:not(.editing) .activity-item {
   border-bottom: 1px solid #dee2e6;
 }
-.section-list .section .section-item .activity:last-child .activity-item {
+.section-list .section .section-item .activity:last-child > .activity-item {
   border-bottom: none;
 }
 .activity-item.activityinline {

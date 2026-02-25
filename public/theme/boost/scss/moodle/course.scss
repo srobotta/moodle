@@ -222,7 +222,7 @@ $divider-hover-color: $primary !default;
         border-bottom: $border-width solid $border-color;
     }
     // Remove last activity bottom border in sections outside course content (like single section page).
-    .section-list .section .section-item .activity:last-child & {
+    .section-list .section .section-item .activity:last-child > & {
         border-bottom: none;
     }
     &.activityinline {
