@@ -177,8 +177,6 @@ if ($mform->is_cancelled()) {
             $url->set_anchor('module-' . $cm->id);
         } else if (!empty($data->beforemod)) {
             $url->set_anchor('module-' . $data->beforemod);
-        } else {
-            $url->set_anchor('section-' . $cw->section);
         }
         redirect($url);
     }
