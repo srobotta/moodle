@@ -17,6 +17,8 @@
 namespace core_question\local\bank;
 
 use core\output\datafilter;
+use restore_questions_activity_structure_step;
+use stdClass;
 
 /**
  * An abstract class for filtering/searching questions.
@@ -240,4 +242,20 @@ abstract class condition {
      * @return array ['SQL where condition', ['param1' => 'value1', 'param2' => 'value2', ...]]
      */
     abstract public static function build_query_from_filter(array $filter): array;
+
+    /**
+     * Convert and map values in the restored filtercondition to corresponding values on the current site/course.
+     *
+     * @param array $filtercondition The origin $filtercondition with preceding conversions applied.
+     * @param stdClass $setreference The set reference record from the backup.
+     * @param restore_questions_activity_structure_step $restorestep The restore step.
+     * @return array the modified $filtercondition
+     */
+    public function restore_filtercondition(
+        array $filtercondition,
+        stdClass $setreference,
+        restore_questions_activity_structure_step $restorestep,
+    ): array {
+        return $filtercondition;
+    }
 }
