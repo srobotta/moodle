@@ -64,6 +64,9 @@ The format of this change log follows the advice given at [Keep a CHANGELOG](htt
 - New `\core\attribute\description` attribute, previously `\core_sms\description`, for representing a language string in code attributes
 
   For more information see [MDL-87799](https://tracker.moodle.org/browse/MDL-87799)
+- Added new metadata field to the page class for header-level information. Use this field to pass extra strings (like the activity dates) that need to be rendered adjacent to the activity header.
+
+  For more information see [MDL-87931](https://tracker.moodle.org/browse/MDL-87931)
 
 #### Changed
 
@@ -520,6 +523,12 @@ The format of this change log follows the advice given at [Keep a CHANGELOG](htt
 
 ### core_question
 
+#### Added
+
+- During restore of a question_set_reference, mapping of IDs in the filtercondition is now delegated to qbank plugins. If your qbank plugin defines a filter condition that uses database IDs, add an override of `restore_filtercondition()` to the `condition` class, which checks the condition's data and replaces the IDs with mapped values if required. See  `qbank_managecategories\category_condition` for an example.
+
+  For more information see [MDL-86524](https://tracker.moodle.org/browse/MDL-86524)
+
 #### Deprecated
 
 - `get_next_version()` from questionlib.php is now deprecated. Use `\core_question\versions::get_next_version()` instead.
@@ -974,9 +983,12 @@ The format of this change log follows the advice given at [Keep a CHANGELOG](htt
 
 #### Added
 
-- The manual completion button has been moved to the activity header to improve visibility and proximity to the activity name. A new theme layout option, `completioninheader`, has been introduced to control this behaviour and is enabled by default. Themes that set completioninheader to false must manually override the relevant template (such as `activity_header` or `activity_info`) to ensure the completion information is displayed correctly.
+- The manual completion button and activity dates have been moved to the activity header to improve visibility and proximity to the activity name. A new theme layout option, `activityinfoinheader`, has been introduced to control this behaviour and is enabled by default. Themes that set `activityinfoinheader` to false must manually override the relevant template (such as `activity_header` or `activity_info`) to ensure the completion information and the activity dates are displayed correctly.
 
   For more information see [MDL-87662](https://tracker.moodle.org/browse/MDL-87662)
+- The `core_courseformat\base` class now includes `set_show_restrictions_expanded()` and `get_show_restrictions_expanded()` to allow course formats to define whether restrictions are displayed as expanded (defaulting to collapsed).
+
+  For more information see [MDL-87929](https://tracker.moodle.org/browse/MDL-87929)
 
 ### theme_boost
 

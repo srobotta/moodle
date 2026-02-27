@@ -4,9 +4,12 @@
 
 ### Added
 
-- The manual completion button has been moved to the activity header to improve visibility and proximity to the activity name. A new theme layout option, `completioninheader`, has been introduced to control this behaviour and is enabled by default. Themes that set completioninheader to false must manually override the relevant template (such as `activity_header` or `activity_info`) to ensure the completion information is displayed correctly.
+- The manual completion button and activity dates have been moved to the activity header to improve visibility and proximity to the activity name. A new theme layout option, `activityinfoinheader`, has been introduced to control this behaviour and is enabled by default. Themes that set `activityinfoinheader` to false must manually override the relevant template (such as `activity_header` or `activity_info`) to ensure the completion information and the activity dates are displayed correctly.
 
   For more information see [MDL-87662](https://tracker.moodle.org/browse/MDL-87662)
+- The `core_courseformat\base` class now includes `set_show_restrictions_expanded()` and `get_show_restrictions_expanded()` to allow course formats to define whether restrictions are displayed as expanded (defaulting to collapsed).
+
+  For more information see [MDL-87929](https://tracker.moodle.org/browse/MDL-87929)
 
 ## 5.1
 

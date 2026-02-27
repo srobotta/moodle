@@ -56,6 +56,9 @@
 - New `\core\attribute\description` attribute, previously `\core_sms\description`, for representing a language string in code attributes
 
   For more information see [MDL-87799](https://tracker.moodle.org/browse/MDL-87799)
+- Added new metadata field to the page class for header-level information. Use this field to pass extra strings (like the activity dates) that need to be rendered adjacent to the activity header.
+
+  For more information see [MDL-87931](https://tracker.moodle.org/browse/MDL-87931)
 
 ### Changed
 
