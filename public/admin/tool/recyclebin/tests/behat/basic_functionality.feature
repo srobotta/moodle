@@ -11,9 +11,9 @@ Feature: Basic recycle bin functionality
       | student1 | Student | 1 | student@asd.com |
       | student2 | Student | 2 | student2@asd.com |
     And the following "courses" exist:
-      | fullname | shortname | initsections |
-      | Course 1 | C1        | 1            |
-      | Course 2 | C2        | 0            |
+      | fullname                                                                                        | shortname | initsections |
+      | Course 1                                                                                        | C1        | 1            |
+      | <span class="multilang" lang="en">Course</span><span class="multilang" lang="es">Curso</span> 2 | C2        | 0            |
     And the following "activities" exist:
       | activity | course | section | name          | intro  |
       | assign   | C1     | 1       | Test assign 1 | Test 1 |
@@ -78,6 +78,8 @@ Feature: Basic recycle bin functionality
   @javascript
   Scenario: Restore a deleted course
     Given I log in as "admin"
+    And the "multilang" filter is "on"
+    And the "multilang" filter applies to "content and headings"
     And I go to the courses management page
     And I click on "delete" action for "Course 2" in management course listing
     And I press "Delete"
@@ -89,6 +91,7 @@ Feature: Basic recycle bin functionality
     And I should not see "Course 2"
     When I navigate to "Recycle bin" in current page administration
     Then I should see "Course 2"
+    But I should not see "Curso 2"
     And I should see "Contents will be permanently deleted after 14 days"
     And I click on "Restore" "link" in the "region-main" "region"
     And I should see "'Course 2' has been restored"
