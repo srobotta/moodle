@@ -14,16 +14,31 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+namespace enrol_fee\task;
+
 /**
- * Fee enrolment plugin version specification.
+ * Process expirations task.
  *
  * @package    enrol_fee
- * @copyright  2019 Shamim Rezaie <shamim@moodle.com>
+ * @copyright  2026 Andi Permana <andi.permana@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+class process_expirations extends \core\task\scheduled_task {
+    /**
+     * Name for this task.
+     *
+     * @return string
+     */
+    public function get_name() {
+        return get_string('processexpirationstask', 'enrol_fee');
+    }
 
-defined('MOODLE_INTERNAL') || die();
-
-$plugin->version   = 2025100601;        // The current plugin version (Date: YYYYMMDDXX).
-$plugin->requires  = 2025092600;        // Requires this Moodle version.
-$plugin->component = 'enrol_fee';       // Full name of the plugin (used for diagnostics).
+    /**
+     * Run task for processing expirations.
+     */
+    public function execute() {
+        $enrol = enrol_get_plugin('fee');
+        $trace = new \text_progress_trace();
+        $enrol->process_expirations($trace);
+    }
+}
