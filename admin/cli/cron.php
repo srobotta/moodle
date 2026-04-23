@@ -43,6 +43,8 @@ require_once($CFG->libdir . '/clilib.php');
         'disable' => false,
         'disable-wait' => false,
         'keep-alive' => null,
+        'laststart' => false,
+        'exec-interval' => 0,
     ],
     [
         'h' => 'help',
@@ -53,6 +55,8 @@ require_once($CFG->libdir . '/clilib.php');
         'd' => 'disable',
         'w' => 'disable-wait',
         'k' => 'keep-alive',
+        't' => 'laststart',
+        'x' => 'exec-interval',
     ]
 );
 
@@ -76,6 +80,10 @@ Options:
 -k, --keep-alive=N       Keep this script alive for N seconds and poll for new tasks
                          The default value can be set by administrators in:
                          Site administration > Server > Tasks > Task processing > Keep alive time
+-t, --laststart          Show the last time cron was started (as a time stamp and in human readable format)
+-x, --exec-interval=N    Check that the last start timestamp is after the given time in N seconds, to detect
+                         when a cron appears to be stuck or not running. Output of the last interval in secconds
+                         is done only when the given time is exceeded. This can be used for monitoring purposes.
 
 Example:
 \$sudo -u www-data /usr/bin/php admin/cli/cron.php
@@ -126,6 +134,26 @@ if ($options['list']) {
             format_time(time() - $task->timestarted),
             substr($task->classname, 0, 52)
         );
+    }
+    exit(0);
+}
+
+if ($options['laststart'] || $options['exec-interval']) {
+    $lastcron = get_config('tool_task', 'lastcronstart');
+    if ($options['laststart']) {
+        if (!empty($CFG->maintenance_enabled)) {
+            mtrace('Site is in maintenance mode.');
+        }
+        mtrace('Last cron start: ' . $lastcron . ' (' . userdate($lastcron) . ')');
+        exit(0);
+    }
+    if (!empty($CFG->maintenance_enabled)) {
+        exit(0); // Be quiet so not to trigger false alarms when the site is in maintenance mode.
+    }
+    $execinterval = (int)$options['exec-interval'];
+    $realinterval = time() - $lastcron;
+    if ($realinterval > $execinterval) {
+        mtrace($realinterval);
     }
     exit(0);
 }
