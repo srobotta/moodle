@@ -6125,4 +6125,24 @@ EOT;
             ],
         ];
     }
+
+    /**
+     * Test that plugin_supports throws coding exceptions for deprecated features.
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('plugin_supports_deprecated_features_provider')]
+    public function test_plugin_supports_deprecated(
+        string $feature,
+    ): void {
+        $this->expectException(\core\exception\coding_exception::class);
+        plugin_supports('mod', 'example', $feature);
+    }
+
+    /**
+     * Data provider for testing deprecated features of the plugin_supports method.
+     */
+    public static function plugin_supports_deprecated_features_provider(): \Generator {
+        // FEATURE_GROUPMEMBERSONLY.
+        // Note: Use the string version.
+        yield 'FEATURE_GROUPMEMBERSONLY' => ['groupmembersonly'];
+    }
 }

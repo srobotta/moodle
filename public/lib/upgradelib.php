@@ -873,6 +873,22 @@ function upgrade_plugins_modules($startcallback, $endcallback, $verbose) {
 
         $installedversion = $DB->get_field('config_plugins', 'value', array('name'=>'version', 'plugin'=>$component)); // No caching!
 
+        // Check if the plugin has a lib.php file and check for deprecated plugin supports.
+        $libfile = "{$fullmod}/lib.php";
+        if (file_exists($libfile)) {
+            require_once($libfile);
+            $supportsfunction = "{$mod}_supports";
+            if (function_exists($supportsfunction)) {
+                if ($supportsfunction('groupmembersonly') === true) {
+                    throw new plugin_defective_exception(
+                        $component,
+                        "The FEATURE_GROUPMEMBERSONLY feature has been deprecated and is no longer supported. "
+                        . "It should no longer be declared in the plugin.",
+                    );
+                }
+            }
+        }
+
         if (file_exists($fullmod.'/db/install.php')) {
             if (get_config($module->name, 'installrunning')) {
                 require_once($fullmod.'/db/install.php');
