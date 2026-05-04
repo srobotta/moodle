@@ -83,7 +83,7 @@ class system_report_table extends base_report_table {
 
         $fields = $this->report->get_base_fields();
         $groupby = [];
-        $maintable = $this->report->get_main_table();
+        $maintablesql = $this->report->get_main_table_sql();
         $maintablealias = $this->report->get_main_table_alias();
         $joins = $this->report->get_joins();
         [$where, $params] = $this->report->get_base_condition();
@@ -173,8 +173,7 @@ class system_report_table extends base_report_table {
         $this->set_default_per_page($this->report->get_default_per_page());
 
         // Initialise table SQL properties.
-        $fieldsql = implode(', ', $fields);
-        $this->init_sql($fieldsql, "{{$maintable}} {$maintablealias}", $joins, $where, $params, $groupby);
+        $this->init_sql(implode(', ', $fields), "{$maintablesql} {$maintablealias}", $joins, $where, $params, $groupby);
     }
 
     /**

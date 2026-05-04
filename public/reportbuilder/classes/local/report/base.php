@@ -48,11 +48,11 @@ abstract class base {
     /** @var report $report Report persistent */
     private $report;
 
-    /** @var string $maintable */
-    private $maintable = '';
+    /** @var string $maintablesql */
+    private string $maintablesql = '';
 
     /** @var string $maintablealias */
-    private $maintablealias = '';
+    private string $maintablealias = '';
 
     /** @var array $sqljoins */
     private $sqljoins = [];
@@ -161,8 +161,8 @@ abstract class base {
      * @throws coding_exception
      */
     protected function validate(): void {
-        if (empty($this->maintable)) {
-            throw new coding_exception('Report must define main table by calling $this->set_main_table()');
+        if (empty($this->maintablesql)) {
+            throw new coding_exception('Report must define main table by calling $this->set_main_table[_sql](...)');
         }
 
         if (empty($this->columns)) {
@@ -171,13 +171,23 @@ abstract class base {
     }
 
     /**
-     * Set the main table and alias for the SQL query
+     * Set the main table and alias for report query
      *
      * @param string $tablename
      * @param string $tablealias
      */
-    final public function set_main_table(string $tablename, string $tablealias = ''): void {
-        $this->maintable = $tablename;
+    final public function set_main_table(string $tablename, string $tablealias): void {
+        $this->set_main_table_sql("{{$tablename}}", $tablealias);
+    }
+
+    /**
+     * Set the main table SQL and alias for report query
+     *
+     * @param string $tablesql
+     * @param string $tablealias
+     */
+    final public function set_main_table_sql(string $tablesql, string $tablealias): void {
+        $this->maintablesql = $tablesql;
         $this->maintablealias = $tablealias;
     }
 
@@ -185,9 +195,24 @@ abstract class base {
      * Get the main table name
      *
      * @return string
+     *
+     * @deprecated since Moodle 5.3 - please use {@see get_main_table_sql} instead
      */
+    #[\core\attribute\deprecated('->get_main_table_sql', mdl: 'MDL-88397', since: '5.3')]
     final public function get_main_table(): string {
-        return $this->maintable;
+        \core\deprecation::emit_deprecation([self::class, __FUNCTION__]);
+
+        // Ensure backwards-compatibility is preserved, remove the outer curly brackets.
+        return preg_replace('/^({)(.*)(})$/', '$2', $this->maintablesql);
+    }
+
+    /**
+     * Get the main table SQL
+     *
+     * @return string
+     */
+    final public function get_main_table_sql(): string {
+        return $this->maintablesql;
     }
 
     /**
