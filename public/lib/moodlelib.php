@@ -7724,6 +7724,12 @@ function component_class_callback($classname, $methodname, array $params, $defau
 function plugin_supports($type, $name, $feature, $default = null) {
     global $CFG;
 
+    if ($feature === FEATURE_GROUPMEMBERSONLY) {
+        throw new \core\exception\coding_exception(
+            'The FEATURE_GROUPMEMBERSONLY flag has been deprecated and is no longer supported.'
+        );
+    }
+
     if ($type === 'mod' and $name === 'NEWMODULE') {
         // Somebody forgot to rename the module template.
         return false;
