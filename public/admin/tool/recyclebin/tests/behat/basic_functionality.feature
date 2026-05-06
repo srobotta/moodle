@@ -52,6 +52,8 @@ Feature: Basic recycle bin functionality
       | badge             | role           |
       | My course 1 badge | editingteacher |
       | My course 2 badge | editingteacher |
+    And the "multilang" filter is "on"
+    And the "multilang" filter applies to "content and headings"
 
   Scenario: Restore a deleted assignment
     Given I log in as "teacher1"
@@ -78,8 +80,6 @@ Feature: Basic recycle bin functionality
   @javascript
   Scenario: Restore a deleted course
     Given I log in as "admin"
-    And the "multilang" filter is "on"
-    And the "multilang" filter applies to "content and headings"
     And I go to the courses management page
     And I click on "delete" action for "Course 2" in management course listing
     And I press "Delete"
@@ -91,6 +91,7 @@ Feature: Basic recycle bin functionality
     And I should not see "Course 2"
     When I navigate to "Recycle bin" in current page administration
     Then I should see "Course 2"
+    But I should not see "Curso 2"
     And I should see "Contents will be permanently deleted after 14 days"
     And I click on "Restore" "link" in the "region-main" "region"
     And I should see "'Course 2' has been restored"
@@ -164,8 +165,6 @@ Feature: Basic recycle bin functionality
     Given I log in as "admin"
     And the following config values are set as admin:
       | autohide | 1 | tool_recyclebin |
-    And the "multilang" filter is "on"
-    And the "multilang" filter applies to "content and headings"
     And I navigate to "Courses >  Manage courses and categories" in site administration
     And I click on "Actions menu" "link"
     Then I should not see "Recycle bin"
