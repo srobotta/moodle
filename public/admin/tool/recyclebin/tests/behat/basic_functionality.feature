@@ -52,6 +52,8 @@ Feature: Basic recycle bin functionality
       | badge             | role           |
       | My course 1 badge | editingteacher |
       | My course 2 badge | editingteacher |
+    And the "multilang" filter is "on"
+    And the "multilang" filter applies to "content and headings"
 
   Scenario: Restore a deleted assignment
     Given I log in as "teacher1"
@@ -78,8 +80,6 @@ Feature: Basic recycle bin functionality
   @javascript
   Scenario: Restore a deleted course
     Given I log in as "admin"
-    And the "multilang" filter is "on"
-    And the "multilang" filter applies to "content and headings"
     And I go to the courses management page
     And I click on "delete" action for "Course 2" in management course listing
     And I press "Delete"
@@ -98,7 +98,7 @@ Feature: Basic recycle bin functionality
     And I wait to be redirected
     And I go to the courses management page
     And I should see "Course 2" in the "#course-listing" "css_element"
-    And I am on the "Course 2" "groups overview" page
+    And I am on the "C2" "groups overview" page
     And "Student 1" "text" should exist in the "Group A" "table_row"
     And "Student 2" "text" should exist in the "Group A" "table_row"
     And "Student 2" "text" should exist in the "Group B" "table_row"
