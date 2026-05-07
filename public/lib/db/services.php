@@ -3014,6 +3014,14 @@ $functions = array(
         'ajax' => true,
         'services' => [MOODLE_OFFICIAL_MOBILE_SERVICE],
     ],
+    'core_contentbank_search_contexts' => [
+        'classname'     => 'core_contentbank\external\search_contexts',
+        'classpath'     => '',
+        'description'   => 'Search for categories or courses in the content bank.',
+        'type'          => 'read',
+        'ajax'          => true,
+        'capabilities'  => 'moodle/contentbank:viewowncontent',
+    ],
     'core_contentbank_delete_content' => [
         'classname'     => 'core_contentbank\external\delete_content',
         'classpath'     => '',
