@@ -2521,16 +2521,16 @@ final class accesslib_test extends advanced_testcase {
         $cap = 'moodle/contentbank:access';
         $defaultcategoryid = 1;
 
-//         The structure being created here is this:
-//
-//         All tests work with the single capability 'moodle/contentbank:access'.
-//         ROLE DEF/OVERRIDE                                                    .
-//         Role:                Allow       Prohibit        Empty               .
-//                  System      ALLOW       PROHIBIT                            .
-//                  cat1        PREVENT     ALLOW           ALLOW               .
-//                      cat3    ALLOW       PROHIBIT                            .
-//                 cat2        PROHIBIT    PROHIBIT        PROHIBIT             .
-
+        /*  The structure being created here is this:
+         *
+         *  All tests work with the single capability 'moodle/contentbank:access'.
+         *  ROLE DEF/OVERRIDE                                                    .
+         *  Role:                Allow       Prohibit        Empty               .
+         *           System      ALLOW       PROHIBIT                            .
+         *           cat1        PREVENT     ALLOW           ALLOW               .
+         *           cat3        ALLOW       PROHIBIT                            .
+         *           cat2        PROHIBIT    PROHIBIT        PROHIBIT            .
+         */
         // Create a role which allows contentbank:access and one that prohibits it, and one neither.
         $allowroleid = $generator->create_role();
         $prohibitroleid = $generator->create_role();
@@ -2563,7 +2563,7 @@ final class accesslib_test extends advanced_testcase {
         $u1 = $generator->create_user();
 
         // It returns false (annoyingly) if there are no course categories.
-        list($categories, $courses) = get_user_capability_contexts($cap, true, $u1->id);
+        [$categories, $courses] = get_user_capability_contexts($cap, true, $u1->id);
         $this->assertFalse($categories);
 
         // User 2 has allow role (system wide).
@@ -2571,7 +2571,7 @@ final class accesslib_test extends advanced_testcase {
         role_assign($allowroleid, $u2->id, $systemcontext->id);
 
         // Should get $defaultcategory only. cat2 is prohibited; cat1 is prevented, so cat3 is not allowed.
-        list($categories, $courses) = get_user_capability_contexts($cap, true, $u2->id);
+        [$categories, $courses] = get_user_capability_contexts($cap, true, $u2->id);
         // Using same assert_course_ids helper even when we are checking course category ids.
         $this->assert_course_ids([$defaultcategoryid], $categories);
 
@@ -2580,8 +2580,16 @@ final class accesslib_test extends advanced_testcase {
         role_assign($emptyroleid, $u3->id, $systemcontext->id);
 
         // Should get cat1 and cat3. cat2 is prohibited; no access to system level. Sorted by category name.
-        list($categories, $courses) = get_user_capability_contexts($cap, true, $u3->id, true, '', '', '', 'name');
+        [$categories, $courses] = get_user_capability_contexts($cap, true, $u3->id, true, '', '', '', 'name');
         $this->assert_course_ids([$cat1->id, $cat3->id], $categories);
+
+        // Search by name, only matched categories should be returned.
+        [$categories, $courses] = get_user_capability_contexts($cap, true, $u3->id, true, '', '', '', 'name', 0, 'tA');
+        $this->assert_course_ids([$cat3->id], $categories);
+
+        // Set a limit to the search.
+        [$categories, $courses] = get_user_capability_contexts($cap, true, $u3->id, true, '', '', '', 'name', 1);
+        $this->assert_course_ids([$cat1->id], $categories);
 
         // User 4 has prohibit role (system wide).
         $u4 = $generator->create_user();
@@ -2589,7 +2597,7 @@ final class accesslib_test extends advanced_testcase {
 
         // Should not get any, because all of them are prohibited at system level.
         // Even if we try to allow an specific category.
-        list($categories, $courses) = get_user_capability_contexts($cap, true, $u4->id);
+        [$categories, $courses] = get_user_capability_contexts($cap, true, $u4->id);
         $this->assertFalse($categories);
     }
 

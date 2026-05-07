@@ -4264,11 +4264,21 @@ function count_role_users($roleid, context $context, $parent = false) {
  * @param string $categoryorderby If set, use a comma-separated list of fields from course_category
  *   table with sql modifiers (DESC) if needed
  * @param int $limit Limit the number of courses to return on success. Zero equals all entries.
+ * @param string $searchterm If set, use this string to search in course fullname and shortname or category name.
  * @return array Array of categories and courses.
  */
-function get_user_capability_contexts(string $capability, bool $getcategories, $userid = null, $doanything = true,
-                                      $coursefieldsexceptid = '', $categoryfieldsexceptid = '', $courseorderby = '',
-                                      $categoryorderby = '', $limit = 0): array {
+function get_user_capability_contexts(
+    string $capability,
+    bool $getcategories,
+    $userid = null,
+    $doanything = true,
+    $coursefieldsexceptid = '',
+    $categoryfieldsexceptid = '',
+    $courseorderby = '',
+    $categoryorderby = '',
+    $limit = 0,
+    string $searchterm = ''
+): array {
     global $DB, $USER;
 
     // Default to current user.
@@ -4294,8 +4304,6 @@ function get_user_capability_contexts(string $capability, bool $getcategories, $
             // If the does not have this capability in any context, return false without querying.
             return [false, false];
         }
-
-        $contextlimitsql = 'WHERE' . $contextlimitsql;
     }
 
     $categories = [];
@@ -4310,21 +4318,28 @@ function get_user_capability_contexts(string $capability, bool $getcategories, $
                 }
                 $categoryorderby .= 'c.'.$field;
             }
-            $categoryorderby = 'ORDER BY '.$categoryorderby;
+            $categoryorderby = ' ORDER BY ' . $categoryorderby;
         }
-        $rs = $DB->get_recordset_sql("
+        $searchsql = "
             SELECT c.id $fieldlist
               FROM {course_categories} c
-               JOIN {context} x ON c.id = x.instanceid AND x.contextlevel = ?
-            $contextlimitsql
-            $categoryorderby", array_merge([CONTEXT_COURSECAT], $contextlimitparams));
-        $basedlimit = $limit;
+              JOIN {context} x ON c.id = x.instanceid AND x.contextlevel = ?
+        ";
+        $searchparams = [CONTEXT_COURSECAT];
+        if (!empty($searchterm)) {
+            $searchsql .= ' WHERE LOWER(c.name) LIKE ?';
+            $searchparams[] = '%' . $DB->sql_like_escape(strtolower($searchterm)) . '%';
+            if ($contextlimitsql) {
+                $searchsql .= ' AND ' . $contextlimitsql;
+                $searchparams = array_merge($searchparams, $contextlimitparams);
+            }
+        } else if (!empty($contextlimitsql)) {
+            $searchsql .= ' WHERE ' . $contextlimitsql;
+            $searchparams = array_merge($searchparams, $contextlimitparams);
+        }
+        $rs = $DB->get_recordset_sql($searchsql . $categoryorderby, $searchparams, 0, $limit);
         foreach ($rs as $category) {
             $categories[] = $category;
-            $basedlimit--;
-            if ($basedlimit == 0) {
-                break;
-            }
         }
         $rs->close();
     }
@@ -4340,20 +4355,29 @@ function get_user_capability_contexts(string $capability, bool $getcategories, $
             }
             $courseorderby .= 'c.'.$field;
         }
-        $courseorderby = 'ORDER BY '.$courseorderby;
+        $courseorderby = ' ORDER BY ' . $courseorderby;
     }
-    $rs = $DB->get_recordset_sql("
-            SELECT c.id $fieldlist
-              FROM {course} c
-               JOIN {context} x ON c.id = x.instanceid AND x.contextlevel = ?
-            $contextlimitsql
-            $courseorderby", array_merge([CONTEXT_COURSE], $contextlimitparams));
+    $searchsql = "
+        SELECT c.id $fieldlist
+          FROM {course} c
+          JOIN {context} x ON c.id = x.instanceid AND x.contextlevel = ?
+    ";
+    $searchparams = [CONTEXT_COURSE];
+    if (!empty($searchterm)) {
+        $searchsql .= ' WHERE (LOWER(c.fullname) LIKE ? OR LOWER(c.shortname) LIKE ?)';
+        $searchparams[] = '%' . $DB->sql_like_escape(strtolower($searchterm)) . '%';
+        $searchparams[] = '%' . $DB->sql_like_escape(strtolower($searchterm)) . '%';
+        if ($contextlimitsql) {
+            $searchsql .= ' AND ' . $contextlimitsql;
+            $searchparams = array_merge($searchparams, $contextlimitparams);
+        }
+    } else if (!empty($contextlimitsql)) {
+        $searchsql .= ' WHERE ' . $contextlimitsql;
+        $searchparams = array_merge($searchparams, $contextlimitparams);
+    }
+    $rs = $DB->get_recordset_sql($searchsql . $courseorderby, $searchparams, 0, $limit);
     foreach ($rs as $course) {
         $courses[] = $course;
-        $limit--;
-        if ($limit == 0) {
-            break;
-        }
     }
     $rs->close();
     return [$categories, $courses];
