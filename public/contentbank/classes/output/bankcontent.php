@@ -50,14 +50,9 @@ class bankcontent implements renderable, templatable {
     private $context;
 
     /**
-     * @var array   Course categories that the user has access to.
+     * @var contentbank Contentbank object used to get the contexts with capabilities for the user.
      */
-    private $allowedcategories;
-
-    /**
-     * @var array   Courses that the user has access to.
-     */
-    private $allowedcourses;
+    private $contentbank;
 
     /**
      * Construct this renderable.
@@ -71,7 +66,7 @@ class bankcontent implements renderable, templatable {
         $this->contents = $contents;
         $this->toolbar = $toolbar;
         $this->context = $context;
-        list($this->allowedcategories, $this->allowedcourses) = $cb->get_contexts_with_capabilities_by_user();
+        $this->contentbank = $cb;
     }
 
     /**
@@ -131,44 +126,69 @@ class bankcontent implements renderable, templatable {
         $allowedcontexts = [];
         $systemcontext = \context_system::instance();
         if (has_capability('moodle/contentbank:access', $systemcontext)) {
-            $allowedcontexts[$systemcontext->id] = get_string('coresystem');
-        }
-        $options = [];
-        foreach ($this->allowedcategories as $allowedcategory) {
-            context_helper::preload_from_record(clone $allowedcategory);
-            $options[$allowedcategory->ctxid] = format_string($allowedcategory->name, true, [
-                'context' => coursecat::instance($allowedcategory->ctxinstance),
+            $searchbody = $output->render_from_template('contentbank/searchcontext/combobox', [
+                'id' => $this->context->id,
+                'contexttype' => $this->context->contextlevel,
+                'currentvalue' => $this->context->id
+                    ? format_string($this->context->get_context_name(false))
+                    : get_string('coresystem'),
+                'instance' => rand(),
             ]);
-        }
-        if (!empty($options)) {
-            $allowedcontexts['categories'] = [get_string('coursecategories') => $options];
-        }
-        $options = [];
-        foreach ($this->allowedcourses as $allowedcourse) {
-            // Don't add the frontpage course to the list.
-            if ($allowedcourse->id != $SITE->id) {
-                context_helper::preload_from_record(clone $allowedcourse);
-                $options[$allowedcourse->ctxid] = format_string($allowedcourse->fullname, true, [
-                    'context' => course::instance($allowedcourse->ctxinstance),
+            $collapsemenudirection = right_to_left() ? 'dropdown-menu-start' : 'dropdown-menu-end';
+            $dropdowncontent = '<div data-region="contentbank-context-search">' . $searchbody . '</div>';
+            $combobox = new \core\output\comboboxsearch(
+                false,
+                get_string('choosecontext', 'core_contentbank'),
+                $dropdowncontent,
+                'contentbank-context-search',
+                'context-widget ' . $collapsemenudirection,
+                'contentbank-context-search-dropdown dropdown-menu ovewflow-auto',
+                null,
+                true,
+                get_string('choosecontext', 'core_contentbank'),
+                'context',
+                $this->context->id
+            );
+            $data->contextcombobox = $output->render_from_template('core/comboboxsearch', $combobox->export_for_template($output));
+            $PAGE->requires->js_call_amd('core_contentbank/contextsearch', 'init');
+        } else {
+            $options = [];
+            [$allowedcategories, $allowedcourses] = $this->contentbank->get_contexts_with_capabilities_by_user();
+            foreach ($allowedcategories as $allowedcategory) {
+                context_helper::preload_from_record(clone $allowedcategory);
+                $options[$allowedcategory->ctxid] = format_string($allowedcategory->name, true, [
+                    'context' => coursecat::instance($allowedcategory->ctxinstance),
                 ]);
             }
+            if (!empty($options)) {
+                $allowedcontexts['categories'] = [get_string('coursecategories') => $options];
+            }
+            $options = [];
+            foreach ($allowedcourses as $allowedcourse) {
+                // Don't add the frontpage course to the list.
+                if ($allowedcourse->id != $SITE->id) {
+                    context_helper::preload_from_record(clone $allowedcourse);
+                    $options[$allowedcourse->ctxid] = format_string($allowedcourse->fullname, true, [
+                        'context' => course::instance($allowedcourse->ctxinstance),
+                    ]);
+                }
+            }
+            if (!empty($options)) {
+                $allowedcontexts['courses'] = [get_string('courses') => $options];
+            }
+            if (!empty($allowedcontexts)) {
+                $strchoosecontext = get_string('choosecontext', 'core_contentbank');
+                $singleselect = new \single_select(
+                    new \moodle_url('/contentbank/index.php'),
+                    'contextid',
+                    $allowedcontexts,
+                    $this->context->id,
+                    $strchoosecontext
+                );
+                $singleselect->set_label($strchoosecontext, ['class' => 'visually-hidden']);
+                $data->allowedcontexts = $singleselect->export_for_template($output);
+            }
         }
-        if (!empty($options)) {
-            $allowedcontexts['courses'] = [get_string('courses') => $options];
-        }
-        if (!empty($allowedcontexts)) {
-            $strchoosecontext = get_string('choosecontext', 'core_contentbank');
-            $singleselect = new \single_select(
-                new \moodle_url('/contentbank/index.php'),
-                'contextid',
-                $allowedcontexts,
-                $this->context->id,
-                $strchoosecontext
-            );
-            $singleselect->set_label($strchoosecontext, ['class' => 'visually-hidden']);
-            $data->allowedcontexts = $singleselect->export_for_template($output);
-        }
-
         return $data;
     }
 

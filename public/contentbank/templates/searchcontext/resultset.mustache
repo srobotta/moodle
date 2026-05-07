@@ -1,0 +1,91 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template core_contentbank/searchcontext/resultset
+
+    Wrapping template for returned result items.
+
+    Context variables required for this template:
+    * instance - The instance ID of the combo box.
+    * category - List of categories matched the search.
+    * course - List of courses matched the search.
+    * searchterm - The entered text to find these results.
+    * hascategories - Does the result set has categories?
+    * hascourses - Does the result set has courses?
+
+    Example context (json):
+    {
+        "category": [
+            {
+                "id": 2,
+                "name": "Semester 06"
+            },
+            {
+                "id": 3,
+                "name": "Semester 07"
+            }
+        ],
+        "course": [
+            {
+                "id": 4,
+                "name": "Introduction to Baz Bar Foo"
+            }
+        ],
+        "contextid": 25,
+        "searchterm": "Foo",
+        "hascategories": true,
+        "hascourses": true
+    }
+}}
+{{<core/local/comboboxsearch/resultset}}
+    {{$results}}
+        {{#hascategories}}
+            <li
+                id="result-{{instance}}-categories"
+                class="w-100 dropdown-item d-flex px-0 align-items-center"
+                role="option"
+                data-value="0"
+                aria-label="{{$arialabel}}{{#str}} category, core {{/str}}{{/arialabel}}"
+                aria-disabled="true"
+                aria-selected="false"
+            >
+                <span class="d-block w-100 px-2 text-truncate bold">
+                    {{#str}} category, core {{/str}}
+                </span>
+            </li>
+            {{#categories}}
+                {{>core/local/comboboxsearch/resultitem}}
+            {{/categories}}
+        {{/hascategories}}
+
+        {{#hascourses}}
+            <li
+                id="result-{{instance}}-courses"
+                class="w-100 dropdown-item d-flex px-0 align-items-center"
+                role="option"
+                data-value="0"
+                aria-label="{{$arialabel}}{{#str}} course, core {{/str}}{{/arialabel}}"
+                aria-disabled="true"
+                aria-selected="false"
+            >
+                <span class="d-block w-100 px-2 text-truncate bold">
+                    {{#str}} course, core {{/str}}
+                </span>
+            </li>
+            {{#courses}}
+                {{>core/local/comboboxsearch/resultitem}}
+            {{/courses}}
+        {{/hascourses}}
+    {{/results}}
+{{/core/local/comboboxsearch/resultset}}
