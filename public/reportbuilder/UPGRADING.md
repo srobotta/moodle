@@ -1,5 +1,21 @@
 # core_reportbuilder (subsystem) Upgrade notes
 
+## 5.3dev
+
+### Changed
+
+- New method of the base report class for setting complex SQL as the main report table, `set_main_table_sql()`
+
+  The `$tablealias` parameter of the existing `set_main_table()` method in the same class is now mandatory
+
+  For more information see [MDL-88397](https://tracker.moodle.org/browse/MDL-88397)
+
+### Deprecated
+
+- The base report `get_main_table()` method has been deprecated, calling code should instead call `get_main_table_sql()`
+
+  For more information see [MDL-88397](https://tracker.moodle.org/browse/MDL-88397)
+
 ## 5.2
 
 ### Added

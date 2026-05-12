@@ -1,5 +1,52 @@
 # core (subsystem) Upgrade notes
 
+## 5.3dev
+
+### Added
+
+- New methods have been added to `\core\session\manager` to replace the `NO_MOODLE_COOKIES` constant.
+
+  The constant is still respected if defined before the inclusion of `config.php`,
+  but instead of being the final truth, it is used as the initial value for the
+  session manager.
+
+  Instead of checking the value of `NO_MOODLE_COOKIES`, you can check whether cookies are currently supported using:
+
+  ```php
+  \core\session\manager::supports_cookies();
+  ```
+
+  To update the value and start a new session you can use:
+
+  ```php
+  \core\session\manager::set_cookies_supported(true);
+  \core\session\manager::start();
+  ```
+  For routed controllers, you can set the `cookies` option to `true` or `false` to control whether cookies are supported for that route. This will call the above methods as needed to update the value and start a session if cookies are enabled.
+
+  ```php
+  #[\core\router\attributes\route(
+      // ...
+      cookies: false,
+  )]
+  ```
+
+  Note: disabling cookie support after it has been enabled is not recommended. If doing so you will need to determine whether to terminate the current session, or close it.
+
+  For more information see [MDL-87174](https://tracker.moodle.org/browse/MDL-87174)
+- Two new AMD modules are now available. `core/import` lets AMD code do a native ESM dynamic import without Babel rewriting it. `core/component` provides `appendToDom` and `prependToDom` to mount React components into the DOM, which are then picked up automatically by `react_autoinit`.
+
+  For more information see [MDL-88505](https://tracker.moodle.org/browse/MDL-88505)
+- The `moodle_exception` class now accepts a `$previous` Throwable.
+
+  For more information see [MDL-88579](https://tracker.moodle.org/browse/MDL-88579)
+
+### Deprecated
+
+- The `FEATURE_GROUPMEMBERSONLY` constant has been deprecated and is no longer supported. It should be removed from any plugin code.
+
+  For more information see [MDL-83231](https://tracker.moodle.org/browse/MDL-83231)
+
 ## 5.2
 
 ### Added
