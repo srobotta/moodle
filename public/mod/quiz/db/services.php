@@ -266,6 +266,14 @@ $functions = [
         'ajax'          => true,
     ],
 
+    'mod_quiz_add_grade' => [
+        'classname' => 'mod_quiz\external\add_grade',
+        'description' => 'Add a single grade to an item in an quiz attempt.',
+        'type' => 'write',
+        'capabilities' => 'mod/quiz:grade',
+        'ajax' => true,
+    ],
+
     'mod_quiz_create_grade_items' => [
         'classname' => 'mod_quiz\external\create_grade_items',
         'description' => 'Create quiz grade items. All grade items must belong to the same quiz.',
