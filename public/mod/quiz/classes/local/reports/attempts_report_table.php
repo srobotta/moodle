@@ -332,29 +332,44 @@ abstract class attempts_report_table extends \table_sql {
         global $OUTPUT, $CFG;
 
         $flag = '';
+        $baseurl = '/mod/quiz/reviewquestion.php';
+        $reviewparams = ['attempt' => $attempt->attempt, 'slot' => $slot];
         if ($this->is_flagged($attempt->usageid, $slot)) {
             $flag = $OUTPUT->pix_icon('i/flagged', get_string('flagged', 'question'),
                     'moodle', ['class' => 'questionflag']);
         }
 
         $feedbackimg = '';
+        $directgrade = '';
         $state = $this->slot_state($attempt, $slot);
-        if ($state && $state->is_finished() && $state != question_state::$needsgrading) {
-            $feedbackimg = $this->icon_for_fraction($this->slot_fraction($attempt, $slot));
+        if ($state && $state->is_finished()) {
+            if ($state == question_state::$needsgrading) {
+                $baseurl = '/mod/quiz/comment.php';
+                $directgrade = html_writer::tag(
+                    'a',
+                    get_string('addgrade', 'quiz'),
+                    array_merge(
+                        ['href' => 'javascript:void(0);', 'class' => 'grade-now'],
+                        array_combine(array_map(fn($k) => 'data-' . $k, array_keys($reviewparams)), $reviewparams)
+                    )
+                );
+            } else {
+                $feedbackimg = $this->icon_for_fraction($this->slot_fraction($attempt, $slot));
+            }
         }
 
         $output = html_writer::tag('span', $feedbackimg . html_writer::tag('span',
                 $data, ['class' => $state->get_state_class(true)]) . $flag, ['class' => 'que']);
 
-        $reviewparams = ['attempt' => $attempt->attempt, 'slot' => $slot];
         if (isset($attempt->try)) {
             $reviewparams['step'] = $this->step_no_for_try($attempt->usageid, $slot, $attempt->try);
         }
-        $url = new moodle_url('/mod/quiz/reviewquestion.php', $reviewparams);
+        $url = new moodle_url($baseurl, $reviewparams);
         $output = $OUTPUT->action_link($url, $output,
                 new popup_action('click', $url, 'reviewquestion',
                         ['height' => 450, 'width' => 650]),
                 ['title' => get_string('reviewresponse', 'quiz')]);
+        $output .= $directgrade;
 
         if (!empty($CFG->enableplagiarism)) {
             require_once($CFG->libdir . '/plagiarismlib.php');
@@ -787,6 +802,7 @@ abstract class attempts_report_table extends \table_sql {
         // Close the form.
         echo '</div>';
         echo '</form></div>';
+        $PAGE->requires->js_call_amd('mod_quiz/add_grade', 'init', ['selector' => 'a.grade-now']);
     }
 
     /**
