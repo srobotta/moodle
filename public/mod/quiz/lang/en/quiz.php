@@ -35,6 +35,7 @@ $string['addarandomquestion_help'] = 'When a random question is added, it result
 $string['addarandomquestion_success'] = 'Random questions have been added';
 $string['addarandomselectedquestion'] = 'Add a random selected question ...';
 $string['adddescriptionlabel'] = 'Add a description item';
+$string['addgrade'] = 'Add grade';
 $string['addingquestion'] = 'Adding a question';
 $string['addingquestions'] = '<p>This side of the page is where you manage your database of questions. Questions are stored in categories to help you keep them organised, and can be used by any quiz in your course or even other courses if you choose to \'publish\' them.</p>
 <p>After you select or create a question category you will be able to create or edit questions. You can select any of these questions to add to your quiz over on the other side of this page.</p>';
@@ -470,6 +471,7 @@ $string['grademethod_help'] = 'When multiple attempts are allowed, the following
 * Average (mean) grade of all attempts
 * First attempt (all other attempts are ignored)
 * Last attempt (all other attempts are ignored)';
+$string['gradeschangedreload'] = 'Grades have been changed, please reload the page to get an up-to-date chart.';
 $string['gradesofar'] = '{$a->method}: {$a->mygrade} / {$a->quizgrade}.';
 $string['gradetopassmustbeset'] = 'Grade to pass cannot be zero as this quiz has its completion method set to require passing grade. Please set a non-zero value.';
 $string['gradetopassoutof'] = 'Grade to pass: {$a->grade} out of {$a->maxgrade}';

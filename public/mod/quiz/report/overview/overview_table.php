@@ -303,7 +303,6 @@ class quiz_overview_table extends attempts_report_table {
         }
 
         if (isset($this->regradedqs[$attempt->usageid][$slot])) {
-            $gradefromdb = $grade;
             $newgrade = quiz_rescale_grade(
                     $this->regradedqs[$attempt->usageid][$slot]->newfraction * $question->maxmark,
                     $this->quiz, 'question');
